@@ -1,3 +1,5 @@
 /cmake-build-debug/
 /cmake-build-release/
 /.idea
+/antlr4_runtime/*
+/dist
