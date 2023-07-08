@@ -69,10 +69,10 @@ void TestStringToPositionInvalid() {
 }
 }  // namespace
 int main() {
-//    TestRunner tr;
-//    RUN_TEST(tr, TestPositionAndStringConversion);
-//    RUN_TEST(tr, TestPositionToStringInvalid);
-//    RUN_TEST(tr, TestStringToPositionInvalid);
+    TestRunner tr;
+    RUN_TEST(tr, TestPositionAndStringConversion);
+    RUN_TEST(tr, TestPositionToStringInvalid);
+    RUN_TEST(tr, TestStringToPositionInvalid);
 
   // A1
   {

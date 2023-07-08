@@ -11,18 +11,18 @@ const int MAX_POS_LETTER_COUNT = 3;
 
 const Position Position::NONE = {-1, -1};
 
-int IntPow(int base, int exp) {
-  return static_cast<int>(std::pow(base, exp));
-}
-
-int IntFindExp(int value, int base) {
-  int exp = 0;
-  while (value >= LETTERS) {
-    ++exp;
-    value /= LETTERS;
-  }
-  return exp;
-}
+//int IntPow(int base, int exp) {
+//  return static_cast<int>(std::pow(base, exp));
+//}
+//
+//int IntFindExp(int value, int base) {
+//  int exp = 0;
+//  while (value >= LETTERS) {
+//    ++exp;
+//    value /= LETTERS;
+//  }
+//  return exp;
+//}
 
 // Реализуйте методы:
 bool Position::operator==(const Position rhs) const {
@@ -50,7 +50,7 @@ std::string Position::ToString() const {
 
   // Определить разрядность
   // ZZ - (26*26) + 26
-  static size_t zz = (LETTERS * LETTERS) + LETTERS;
+  static int zz = (LETTERS * LETTERS) + LETTERS;
 
   std::stringstream ss;
   // Чтобы математика складывалась
