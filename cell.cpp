@@ -11,11 +11,12 @@ Cell::Cell() {}
 Cell::~Cell() {}
 
 void Cell::Set(std::string text) {
+  cell_type_ = CellType::STRING;
   if (text.empty()) {
     return;
   }
 
-  if (text[0] == '=' && text.size() > 1) {
+  if (text[0] == FORMULA_SIGN && text.size() > 1) {
     cell_type_ = CellType::FORMULA;
   }
 
@@ -30,14 +31,14 @@ Cell::Value Cell::GetValue() const {
   }
 
   if (cell_type_ == FORMULA) {
-    auto result = ParseFormula(value_)->Evaluate();
+    auto result = ParseFormula(value_.substr(1))->Evaluate();
     if (std::holds_alternative<FormulaError>(result)) {
       return std::get<FormulaError>(result).what();
     } else {
       return std::get<double>(result);
     }
   } else {
-    if (value_[0] == '\'') {
+    if (value_[0] == ESCAPE_SIGN) {
       return value_.substr(1);
     } else {
       return value_;
@@ -48,10 +49,9 @@ Cell::Value Cell::GetValue() const {
 
 std::string Cell::GetText() const {
   if (cell_type_ == FORMULA) {
-    return ParseFormula(value_)->GetExpression();
+    return ParseFormula(value_.substr(1))->GetExpression();
   } else {
     return value_;
   }
 
 }
-
