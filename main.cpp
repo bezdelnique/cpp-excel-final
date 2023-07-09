@@ -3,15 +3,6 @@
 #include "formula.h"
 #include "test_runner_p.h"
 
-using Value = FormulaInterface::Value;
-
-namespace {
-Value ExecuteFormula(const std::string &expression) {
-  return ParseFormula(expression)->Evaluate();
-}
-}  // namespace
-
-
 inline std::ostream &operator<<(std::ostream &output, const CellInterface::Value &value) {
   std::visit([&](const auto &x) { output << x; }, value);
   return output;
@@ -24,47 +15,51 @@ std::unique_ptr<CellInterface> CreateCell(const std::string &str) {
 }
 
 int main() {
-  ASSERT_EQUAL(std::get<double>(ExecuteFormula("1")), 1.0);
-  ASSERT_EQUAL(std::get<double>(ExecuteFormula("1+2*3-4/5")), 6.2);
 
-  std::cout << std::get<FormulaError>(ExecuteFormula("1/0")) << std::endl;
+  auto simple_text = CreateCell("simple_text");
+  ASSERT_EQUAL(simple_text->GetText(), "simple_text");
+  ASSERT_EQUAL(std::get<std::string>(simple_text->GetValue()), "simple_text");
 
-//  auto simple_text = CreateCell("simple_text");
-//  ASSERT_EQUAL(simple_text->GetText(), "simple_text");
-//  ASSERT_EQUAL(std::get<std::string>(simple_text->GetValue()), "simple_text");
-//
-//  auto empty_apostroph = CreateCell("'");
-//  ASSERT_EQUAL(empty_apostroph->GetText(), "'");
-//  ASSERT_EQUAL(std::get<std::string>(empty_apostroph->GetValue()), "");
-//
-//  auto apostroph = CreateCell("'apostroph");
-//  ASSERT_EQUAL(apostroph->GetText(), "'apostroph");
-//  ASSERT_EQUAL(std::get<std::string>(apostroph->GetValue()), "apostroph");
-//
-//  auto text_formula = CreateCell("'=1+2");
-//  ASSERT_EQUAL(text_formula->GetText(), "'=1+2");
-//  ASSERT_EQUAL(std::get<std::string>(text_formula->GetValue()), "=1+2");
-//
-//  auto empty_formula = CreateCell("=");
-//  ASSERT_EQUAL(empty_formula->GetText(), "=");
-//  ASSERT_EQUAL(std::get<std::string>(empty_formula->GetValue()), "=");
-//
-//  auto formula = CreateCell("=1+2");
-//  ASSERT_EQUAL(formula->GetText(), "=1+2");
-//  ASSERT_EQUAL(std::get<double>(formula->GetValue()), 3);
-//
-//  auto switch_text = CreateCell("1+2");
-//  ASSERT_EQUAL(switch_text->GetText(), "1+2");
-//  ASSERT_EQUAL(std::get<std::string>(switch_text->GetValue()), "1+2");
-//
-//  switch_text->Set("=1+2");
-//  ASSERT_EQUAL(switch_text->GetText(), "=1+2");
-//  ASSERT_EQUAL(std::get<double>(switch_text->GetValue()), 3);
-//
-//  switch_text->Set("=1/0");
-//  ASSERT_EQUAL(switch_text->GetText(), "=1/0");
-//  std::cout << std::get<FormulaError>(switch_text->GetValue()) << std::endl;
-//
-//  std::cout << "All tests passed" << std::endl;
+  auto empty_apostroph = CreateCell("'");
+  ASSERT_EQUAL(empty_apostroph->GetText(), "'");
+  ASSERT_EQUAL(std::get<std::string>(empty_apostroph->GetValue()), "");
+
+  auto apostroph = CreateCell("'apostroph");
+  ASSERT_EQUAL(apostroph->GetText(), "'apostroph");
+  ASSERT_EQUAL(std::get<std::string>(apostroph->GetValue()), "apostroph");
+
+  auto text_formula = CreateCell("'=1+2");
+  ASSERT_EQUAL(text_formula->GetText(), "'=1+2");
+  ASSERT_EQUAL(std::get<std::string>(text_formula->GetValue()), "=1+2");
+
+  auto empty_formula = CreateCell("=");
+  ASSERT_EQUAL(empty_formula->GetText(), "=");
+  ASSERT_EQUAL(std::get<std::string>(empty_formula->GetValue()), "=");
+
+  auto formula = CreateCell("=1+2");
+  ASSERT_EQUAL(formula->GetText(), "=1+2");
+  ASSERT_EQUAL(std::get<double>(formula->GetValue()), 3);
+
+  auto switch_text = CreateCell("1+2");
+  ASSERT_EQUAL(switch_text->GetText(), "1+2");
+  ASSERT_EQUAL(std::get<std::string>(switch_text->GetValue()), "1+2");
+
+  switch_text->Set("=1+2");
+  ASSERT_EQUAL(switch_text->GetText(), "=1+2");
+  ASSERT_EQUAL(std::get<double>(switch_text->GetValue()), 3);
+
+  switch_text->Set("=1/0");
+  ASSERT_EQUAL(switch_text->GetText(), "=1/0");
+  std::cout << std::get<FormulaError>(switch_text->GetValue()) << std::endl;
+
+  try {
+    switch_text->Set("=1+");
+    assert(false);
+  } catch (...) {
+    //
+  }
+  ASSERT_EQUAL(switch_text->GetText(), "=1/0");
+
+  std::cout << "All tests passed" << std::endl;
   return 0;
 }

@@ -3,3 +3,4 @@
 /.idea
 /antlr4_runtime/*
 /dist
+/cmake-build-debug-mingw

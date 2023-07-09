@@ -139,19 +139,21 @@ class BinaryOpExpr final : public Expr {
 // Реализуйте метод Evaluate() для бинарных операций.
 // При делении на 0 выбрасывайте ошибку вычисления FormulaError
   double Evaluate() const override {
-    switch (type_) {
-      case Add:return lhs_->Evaluate() + rhs_->Evaluate();
-      case Subtract:return lhs_->Evaluate() - rhs_->Evaluate();
-      case Multiply:return lhs_->Evaluate() * rhs_->Evaluate();
-      case Divide:
-        //if (std::isfinite(rhs_->Evaluate())) {
-        if (rhs_->Evaluate() == 0) {
-          throw FormulaError("DIV/0");
-        }
-        return lhs_->Evaluate() / rhs_->Evaluate();
-      default:throw FormulaError("Unknown operation");
+    if (type_ == Add) {
+      return lhs_->Evaluate() + rhs_->Evaluate();
+    } else if (type_ == Subtract) {
+      return lhs_->Evaluate() - rhs_->Evaluate();
+    } else if (type_ == Multiply) {
+      return lhs_->Evaluate() * rhs_->Evaluate();
+    } else if (type_ == Divide) {
+      auto result = lhs_->Evaluate() / rhs_->Evaluate();
+      if (!std::isfinite(result)) {
+        throw FormulaError("DIV/0");
+      } else {
+        return result;
+      }
     }
-
+    throw FormulaError("Unknown operation");
   }
 
  private:
