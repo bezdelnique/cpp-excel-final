@@ -56,3 +56,4 @@ install(
 )
 
 set_directory_properties(PROPERTIES VS_STARTUP_PROJECT spreadsheet)
+

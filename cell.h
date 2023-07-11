@@ -8,19 +8,20 @@ enum CellType {
   FORMULA
 };
 
+using namespace std::literals;
 
 class Cell : public CellInterface {
-public:
-    Cell();
-    ~Cell();
+ public:
+  Cell();
+  ~Cell();
 
-    void Set(std::string text);
-    void Clear();
+  void Set(std::string text);
+  void Clear();
 
-    Value GetValue() const override;
-    std::string GetText() const override;
+  Value GetValue() const override;
+  std::string GetText() const override;
 
-private:
+ private:
   CellType cell_type_{CellType::STRING};
   std::string value_;
   //std::string raw_value_;
@@ -33,3 +34,5 @@ private:
     std::unique_ptr<Impl> impl_;
 */
 };
+
+std::ostream &operator<<(std::ostream &output, const CellInterface::Value &value);

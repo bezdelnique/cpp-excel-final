@@ -13,6 +13,10 @@ std::ostream &operator<<(std::ostream &output, FormulaError fe) {
   return output << "#DIV/0!";
 }
 
+std::ostream &operator<<(std::ostream &output, Position pos) {
+  return output << "Position{" << pos.row << "," << pos.col << "}";
+}
+
 namespace {
 class Formula : public FormulaInterface {
  public:

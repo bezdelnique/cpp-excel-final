@@ -60,3 +60,13 @@ std::string Cell::GetText() const {
     return value_;
   }
 }
+
+
+std::ostream &operator<<(std::ostream &output, const CellInterface::Value &value) {
+  std::visit(
+      [&](const auto &x) {
+        output << x;
+      },
+      value);
+  return output;
+}
