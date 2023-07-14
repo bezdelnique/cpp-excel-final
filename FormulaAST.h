@@ -12,24 +12,26 @@ class Expr;
 }
 
 class ParsingError : public std::runtime_error {
-    using std::runtime_error::runtime_error;
+  using std::runtime_error::runtime_error;
 };
 
 class FormulaAST {
-public:
-    explicit FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr);
-    FormulaAST(FormulaAST&&) = default;
-    FormulaAST& operator=(FormulaAST&&) = default;
-    ~FormulaAST();
+ public:
+  explicit FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr);
+  FormulaAST(FormulaAST &&) = default;
+  FormulaAST &operator=(FormulaAST &&) = default;
+  ~FormulaAST();
 
-    double Execute() const;
-    void Print(std::ostream& out) const;
-    void PrintFormula(std::ostream& out) const;
+  double Execute(const SheetInterface &sheet) const;
+  void Print(std::ostream &out) const;
+  void PrintFormula(std::ostream &out) const;
+  void GetCells(std::vector<std::string> &out) const;
 
-private:
-    std::unique_ptr<ASTImpl::Expr> root_expr_;
+ private:
+  std::unique_ptr<ASTImpl::Expr> root_expr_;
 };
 
-FormulaAST ParseFormulaAST(std::istream& in);
-FormulaAST ParseFormulaAST(const std::string& in_str);
+FormulaAST ParseFormulaAST(std::istream &in);
+FormulaAST ParseFormulaAST(const std::string &in_str);
 
+using CellValueResolver = std::function<double(std::string_view address)>;

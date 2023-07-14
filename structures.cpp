@@ -121,3 +121,26 @@ Position Position::FromString(std::string_view str) {
 bool Size::operator==(Size rhs) const {
   return rows == rhs.rows && cols == rhs.cols;
 }
+
+
+// == FormulaError ==
+
+FormulaError::FormulaError(FormulaError::Category category) : category_(category) {}
+
+FormulaError::Category FormulaError::GetCategory() const {
+  return category_;
+}
+
+bool FormulaError::operator==(FormulaError rhs) const {
+  return category_ == rhs.category_;
+}
+
+std::string_view FormulaError::ToString() const {
+  static std::map<Category, std::string> map = {
+      {Category::Ref, "Ref"s},
+      {Category::Value, "Value"s},
+      {Category::Div0, "Div0"s},
+  };
+  return map.at(category_);
+}
+

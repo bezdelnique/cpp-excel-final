@@ -25,7 +25,7 @@ void Sheet::SetCell(Position pos, std::string text) {
     }
 
     if (table_[pos.row][pos.col] == nullptr) {
-      table_[pos.row][pos.col] = std::make_unique<Cell>();
+      table_[pos.row][pos.col] = std::make_unique<Cell>(*this);
     }
 
     table_[pos.row][pos.col]->Set(text);
@@ -189,15 +189,15 @@ std::unique_ptr<SheetInterface> CreateSheet() {
   return std::make_unique<Sheet>();
 }
 
-size_t PositionHasher::operator()(const Position position) const {
-  std::hash<int> hasher;
-  size_t value = 31;
-  if (position.col) {
-    value += hasher(position.col) * 31;
-  }
-  if (position.row) {
-    value += hasher(position.row) * 31 * 31;
-  }
-  return value;
-}
-
+//size_t PositionHasher::operator()(const Position position) const {
+//  std::hash<int> hasher;
+//  size_t value = 31;
+//  if (position.col) {
+//    value += hasher(position.col) * 31;
+//  }
+//  if (position.row) {
+//    value += hasher(position.row) * 31 * 31;
+//  }
+//  return value;
+//}
+//

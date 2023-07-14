@@ -1,4 +1,7 @@
 #include "common.h"
+#include "cell.h"
+#include "sheet.h"
+#include "formula.h"
 #include "test_runner_p.h"
 #include <vector>
 #include <memory>
@@ -144,15 +147,13 @@ void TestExample() {
   cerr << "TestExample OK"s << endl;
 }
 
-
-void PrintSheet(const std::unique_ptr<SheetInterface>& sheet) {
+void PrintSheet(const std::unique_ptr<SheetInterface> &sheet) {
   std::cout << sheet->GetPrintableSize() << std::endl;
   sheet->PrintTexts(std::cout);
   std::cout << std::endl;
   sheet->PrintValues(std::cout);
   std::cout << std::endl;
 }
-
 
 void TestClearCells5x5() {
   {
@@ -170,7 +171,6 @@ void TestClearCells5x5() {
   }
 
 }
-
 
 void TestClearEmptyCell() {
   {
@@ -192,16 +192,25 @@ void TestClearEmptyCell() {
 
 
 int main() {
-  TestRunner tr;
-  RUN_TEST(tr, TestEmpty);
-  RUN_TEST(tr, TestInvalidPosition);
-  RUN_TEST(tr, TestSetCellPlainText);
-  RUN_TEST(tr, TestClearCell);
-  RUN_TEST(tr, TestPrint);
-  TestExample();
-  TestClearEmptyCell();
+//  TestRunner tr;
+//  RUN_TEST(tr, TestEmpty);
+//  RUN_TEST(tr, TestInvalidPosition);
+//  RUN_TEST(tr, TestSetCellPlainText);
+//  RUN_TEST(tr, TestClearCell);
+//  RUN_TEST(tr, TestPrint);
+//  TestExample();
+//  TestClearEmptyCell();
 //  TestClearCells5x5();
+
+  auto sheet = CreateSheet();
+  sheet->SetCell("A1"_pos, "=1"s);
+  sheet->SetCell("A2"_pos, "=1"s);
+
+  //auto formula = ParseFormula("3+1");
+  auto formula = ParseFormula("A1+A2");
+  auto result = formula->Evaluate(*sheet);
+  auto refs = formula->GetReferencedCells();
+  std::cout << std::get<double>(result) << std::endl;
 
   return 0;
 }
-  

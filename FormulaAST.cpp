@@ -72,7 +72,12 @@ class Expr {
   virtual ~Expr() = default;
   virtual void Print(std::ostream &out) const = 0;
   virtual void DoPrintFormula(std::ostream &out, ExprPrecedence precedence) const = 0;
-  virtual double Evaluate() const = 0;
+  virtual void DoGetCells(std::vector<std::string> &out) const {
+    // default impl
+  }
+
+  //virtual double Evaluate() const = 0;
+  virtual double Evaluate(CellValueResolver &resolver) const = 0;
 
   // higher is tighter
   virtual ExprPrecedence GetPrecedence() const = 0;
@@ -91,6 +96,10 @@ class Expr {
     if (parens_needed) {
       out << ')';
     }
+  }
+
+  void GetCells(std::vector<std::string> &out) const {
+    DoGetCells(out);
   }
 };
 
@@ -123,6 +132,11 @@ class BinaryOpExpr final : public Expr {
     rhs_->PrintFormula(out, precedence, /* right_child = */ true);
   }
 
+  void DoGetCells(std::vector<std::string> &out) const {
+    lhs_->DoGetCells(out);
+    rhs_->DoGetCells(out);
+  }
+
   ExprPrecedence GetPrecedence() const override {
     switch (type_) {
       case Add:return EP_ADD;
@@ -136,24 +150,23 @@ class BinaryOpExpr final : public Expr {
     }
   }
 
-// Реализуйте метод Evaluate() для бинарных операций.
-// При делении на 0 выбрасывайте ошибку вычисления FormulaError
-  double Evaluate() const override {
+  // Реализуйте метод Evaluate() для бинарных операций.
+  // При делении на 0 выбрасывайте ошибку вычисления FormulaError
+  double Evaluate(CellValueResolver &resolver) const override {
     if (type_ == Add) {
-      return lhs_->Evaluate() + rhs_->Evaluate();
+      return lhs_->Evaluate(resolver) + rhs_->Evaluate(resolver);
     } else if (type_ == Subtract) {
-      return lhs_->Evaluate() - rhs_->Evaluate();
+      return lhs_->Evaluate(resolver) - rhs_->Evaluate(resolver);
     } else if (type_ == Multiply) {
-      return lhs_->Evaluate() * rhs_->Evaluate();
-    } else if (type_ == Divide) {
-      auto result = lhs_->Evaluate() / rhs_->Evaluate();
+      return lhs_->Evaluate(resolver) * rhs_->Evaluate(resolver);
+    } else /*if (type_ == Divide)*/ {
+      auto result = lhs_->Evaluate(resolver) / rhs_->Evaluate(resolver);
       if (!std::isfinite(result)) {
-        throw FormulaError("DIV/0");
+        throw FormulaError(FormulaError::Category::Div0);
       } else {
         return result;
       }
     }
-    throw FormulaError("Unknown operation");
   }
 
  private:
@@ -185,16 +198,20 @@ class UnaryOpExpr final : public Expr {
     operand_->PrintFormula(out, precedence);
   }
 
+  void DoGetCells(std::vector<std::string> &out) const {
+    operand_->DoGetCells(out);
+  }
+
   ExprPrecedence GetPrecedence() const override {
     return EP_UNARY;
   }
 
   // Реализуйте метод Evaluate() для унарных операций.
-  double Evaluate() const override {
+  double Evaluate(CellValueResolver &resolver) const override {
     if (type_ == UnaryMinus) {
-      return operand_->Evaluate() * -1;
+      return operand_->Evaluate(resolver) * -1;
     } else {
-      return operand_->Evaluate();
+      return operand_->Evaluate(resolver);
     }
   }
 
@@ -217,17 +234,52 @@ class NumberExpr final : public Expr {
     out << value_;
   }
 
+  void DoGetCells(std::vector<std::string> &out) const {
+    // Skip
+  }
+
   ExprPrecedence GetPrecedence() const override {
     return EP_ATOM;
   }
 
   // Для чисел метод возвращает значение числа.
-  double Evaluate() const override {
+  double Evaluate(CellValueResolver &resolver) const override {
     return value_;
   }
 
  private:
   double value_;
+};
+
+class CellExpr final : public Expr {
+ public:
+  explicit CellExpr(std::string address)
+      : address_(address) {
+  }
+
+  void Print(std::ostream &out) const override {
+    out << address_;
+  }
+
+  void DoPrintFormula(std::ostream &out, ExprPrecedence /* precedence */) const override {
+    out << address_;
+  }
+
+  void DoGetCells(std::vector<std::string> &out) const {
+    out.push_back(address_);
+  }
+
+  ExprPrecedence GetPrecedence() const override {
+    return EP_ATOM;
+  }
+
+  double Evaluate(CellValueResolver &resolver) const override {
+    return resolver(address_);
+  }
+
+ private:
+  //double value_ = -1;
+  std::string address_;
 };
 
 class ParseASTListener final : public FormulaBaseListener {
@@ -295,6 +347,23 @@ class ParseASTListener final : public FormulaBaseListener {
     args_.back() = std::move(node);
   }
 
+//  void enterCell(FormulaParser::CellContext *ctx) override {
+//
+//  }
+
+  void exitCell(FormulaParser::CellContext *ctx) override {
+    //double value = 0;
+    auto address = ctx->CELL()->getSymbol()->getText();
+    //std::istringstream in(address);
+    //in >> value;
+//    if (!in) {
+//      throw ParsingError("Invalid number: " + address);
+//    }
+
+    auto node = std::make_unique<CellExpr>(address);
+    args_.push_back(std::move(node));
+  }
+
   void visitErrorNode(antlr4::tree::ErrorNode *node) override {
     throw ParsingError("Error when parsing: " + node->getSymbol()->getText());
   }
@@ -357,8 +426,33 @@ void FormulaAST::PrintFormula(std::ostream &out) const {
   root_expr_->PrintFormula(out, ASTImpl::EP_ATOM);
 }
 
-double FormulaAST::Execute() const {
-  return root_expr_->Evaluate();
+void FormulaAST::GetCells(std::vector<std::string> &out) const {
+  root_expr_->GetCells(out);
+}
+
+double FormulaAST::Execute(const SheetInterface &sheet) const {
+  CellValueResolver resolver = [&sheet](std::string_view address) -> double {
+    auto value = sheet.GetCell(Position::FromString(address))->GetValue();
+
+    // FIXME
+    if (std::holds_alternative<std::string>(value)) {
+      double result = 0;
+      auto strValue = std::get<std::string>(value);
+      std::istringstream in(strValue);
+      in >> result;
+      if (!in) {
+        throw ParsingError("Invalid number: " + strValue);
+      }
+      return result;
+    }
+
+    if (std::holds_alternative<FormulaError>(value)) {
+      throw std::get<FormulaError>(value);
+    }
+
+    return std::get<double>(value);
+  };
+  return root_expr_->Evaluate(resolver);
 }
 
 FormulaAST::FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr)
