@@ -13,7 +13,7 @@ Cell::~Cell() {}
 void Cell::Set(std::string text) {
   if (text.size() > 1 && text[0] == FORMULA_SIGN) {
     //cell_type_ = CellType::FORMULA;
-    //std::forward_list<Position> forward_list_copy(forward_list_);
+    //std::forward_list<Position> forward_list_copy(referenced_cells_);
     //forward_list_copy.push_front(this.)
 
     value_holder_ = std::make_unique<CellValueFormula>(sheet_, text);
@@ -37,7 +37,7 @@ std::string Cell::GetText() const {
 }
 
 std::vector<Position> Cell::GetReferencedCells() const {
-//  std::vector vec(forward_list_.begin(), forward_list_.end());
+//  std::vector vec(referenced_cells_.begin(), referenced_cells_.end());
 //  std::sort(vec.begin(), vec.end());
 //  return vec;
   if (!IsFormula()) {
@@ -50,10 +50,15 @@ bool Cell::IsFormula() const {
   return value_holder_->GetType() == FORMULA;
 }
 
-//std::vector<Position> Cell::GetReferencedCells() const {
-//  std::vector vec(forward_list_.begin(), forward_list_.end());
-//  return vec;
-//}
+void Cell::InvalidateCache() const {
+  for (auto const pos : backward_list_) {
+    // Предполагается что циклических ссылок нет и дополнительные проверки не нужны
+    Cell *cell = reinterpret_cast<Cell *>(sheet_.GetCell(pos));
+    cell->InvalidateCache();
+  }
+  value_holder_->InvalidateCache();
+}
+
 
 std::ostream &operator<<(std::ostream &output, const CellInterface::Value &value) {
   std::visit(

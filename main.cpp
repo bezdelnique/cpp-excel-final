@@ -287,6 +287,25 @@ void TestSimpleSearchCycles() {
   cerr << "TestSimpleSearchCycles OK"s << endl;
 }
 
+
+void TestSimpleCacheInvalidation() {
+  // Negative
+  {
+//    auto sheet = CreateSheet();
+//    sheet->SetCell("A1"_pos, "=3"s);
+//    sheet->SetCell("A2"_pos, "=A1+1"s);
+//    assert(std::get<double>(sheet->GetCell("A2"_pos)->GetValue()) == 4);
+
+    auto sheet = CreateSheet();
+    Cell cell1{*sheet};
+    cell1.Set(""s);
+
+
+  }
+
+}
+
+
 void TestClearEmptyCell() {
   {
     auto sheet = CreateSheet();
@@ -320,6 +339,7 @@ int main() {
   TestSimpleCell();
   TestSimpleTableCell();
   TestSimpleSearchCycles();
+  TestSimpleCacheInvalidation();
 
   return 0;
 }

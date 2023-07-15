@@ -23,6 +23,7 @@ void Sheet::SetCell(Position pos, std::string text) {
     }
   }
 
+
   {
     if (pos.row + 1 > static_cast<int>(table_.size())) {
       table_.resize(pos.row + 1);
@@ -38,10 +39,39 @@ void Sheet::SetCell(Position pos, std::string text) {
 //
 //    table_[pos.row][pos.col]->Set(text);
 
+
+    UpdateBackwardLink(pos, new_cell);
     table_[pos.row][pos.col] = std::move(new_cell);
   }
 
   afterSet(pos);
+}
+
+void Sheet::UpdateBackwardLink(Position pos, const std::unique_ptr<Cell> &new_cell) {
+//  backward_list_manager_.
+
+//  if (table_[pos.row][pos.col] != nullptr) {
+//    // Инвалидировать кеш у зависимых ячеек
+//    table_[pos.row][pos.col]->InvalidateCache();
+//
+//    // Удалить обратные ссылки
+//    for (auto const &pos_: table_[pos.row][pos.col]->GetReferencedCells()) {
+//      auto cell = reinterpret_cast<Cell*>(GetCell(pos_));
+//      cell->RemoveBackwardLink(pos);
+//    }
+//
+//    // Сохранение обратных ссылок если ячейка содержит значение
+//    for (auto const pos_ : table_[pos.row][pos.col]->GetBackwardList()) {
+//      new_cell->AddBackwardLink(pos_);
+//    }
+//  }
+//
+//  // Добавить новые обратные ссылки
+//  for (auto const &pos_: new_cell->GetReferencedCells()) {
+//    auto cell = reinterpret_cast<Cell*>(GetCell(pos_));
+//    cell->AddBackwardLink(pos);
+//  }
+
 }
 
 const CellInterface *Sheet::GetCell(Position pos) const {

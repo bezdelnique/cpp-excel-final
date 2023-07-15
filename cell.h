@@ -20,21 +20,24 @@ class Cell : public CellInterface {
     virtual Value GetValue() = 0;
     virtual std::string GetText() = 0;
     virtual CellType GetType() = 0;
+    virtual void InvalidateCache() {
+
+    }
     virtual std::vector<Position> GetReferencedCells() {
       throw std::logic_error("Not implemented"s);
     }
   };
 
   class CellValueEmpty : public CellValue {
-    virtual Value GetValue() {
+    Value GetValue() override {
       throw std::logic_error("Access to empty cell"s);
     }
 
-    virtual std::string GetText() {
+    std::string GetText() override {
       throw std::logic_error("Access to empty cell"s);
     }
 
-    virtual CellType GetType() {
+    virtual CellType GetType() override {
       return CellType::EMPTY;
     }
   };
@@ -51,11 +54,11 @@ class Cell : public CellInterface {
       }
     }
 
-    std::string GetText() {
+    std::string GetText() override {
       return raw_value_;
     }
 
-    virtual CellType GetType() {
+    CellType GetType() override {
       return CellType::STRING;
     }
 
@@ -68,7 +71,7 @@ class Cell : public CellInterface {
     explicit CellValueFormula(SheetInterface &sheet, const std::string &raw_value)
         : CellValueText(raw_value),
           sheet_(sheet),
-          forward_list_(ValidateExpressionAndInitForwardList(raw_value)) {
+          referenced_cells_(ValidateExpressionAndInitForwardList(raw_value)) {
       //formula_ = std::string_view(raw_value_.substr(1));
 
     }
@@ -102,18 +105,23 @@ class Cell : public CellInterface {
       return ss.str();
     }
 
-    virtual CellType GetType() {
+    CellType GetType() override {
       return CellType::FORMULA;
     }
 
-    virtual std::vector<Position> GetReferencedCells() {
-      return forward_list_;
+    std::vector<Position> GetReferencedCells() override {
+      return referenced_cells_;
+    }
+
+    void InvalidateCache() override {
+      cached_.reset();
     }
 
    private:
     SheetInterface &sheet_;
     //std::string_view formula_;
-    std::vector<Position> forward_list_;
+    std::vector<Position> referenced_cells_;
+    std::optional<double> cached_;
   };
 
  public:
@@ -130,9 +138,8 @@ class Cell : public CellInterface {
   std::vector<Position> GetBackwardList() const;
 
   void InvalidateCache() const;
-
-  void AddBackward(Position pos);
-  void RemoveBackward(Position pos);
+  void AddBackwardLink(Position pos);
+  void RemoveBackwardLink(Position pos);
 
   bool IsFormula() const;
 
@@ -141,9 +148,9 @@ class Cell : public CellInterface {
   //CellType cell_type_{CellType::STRING};
   //std::string value_;
   SheetInterface &sheet_;
-  std::optional<double> cached_;
+  //std::optional<double> cached_;
   // Ячейки на которые ссылаемся
-  //std::vector<Position> forward_list_;
+  //std::vector<Position> referenced_cells_;
   // Ячейки которые ссылаются на нас
   // Нужно обеспечить быстрый поиск для последующего удаления
   std::set<Position> backward_list_;
