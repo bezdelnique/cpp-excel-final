@@ -46,6 +46,7 @@ class Formula : public FormulaInterface {
     for (auto const &address : vec) {
       result.push_back(Position::FromString(address));
     }
+    std::sort(result.begin(), result.end());
     return result;
   };
 

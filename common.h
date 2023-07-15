@@ -70,13 +70,11 @@ class FormulaException : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-
 // Исключение, выбрасываемое при попытке передать в метод некорректную позицию
 class InvalidPositionException : public std::out_of_range {
  public:
   using std::out_of_range::out_of_range;
 };
-
 
 // Исключение, выбрасываемое при попытке задать формулу, которая приводит к
 // циклической зависимости между ячейками
@@ -124,9 +122,8 @@ class CellInterface {
   // Возвращает список ячеек, которые непосредственно задействованы в данной
   // формуле. Список отсортирован по возрастанию и не содержит повторяющихся
   // ячеек. В случае текстовой ячейки список пуст.
-  // virtual std::vector<Position> GetReferencedCells() const = 0;
+  virtual std::vector<Position> GetReferencedCells() const = 0;
 };
-
 
 // Интерфейс таблицы
 class SheetInterface {

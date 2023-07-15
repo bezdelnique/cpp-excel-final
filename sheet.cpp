@@ -15,6 +15,14 @@ Sheet::~Sheet() {}
 void Sheet::SetCell(Position pos, std::string text) {
   validatePosition(pos);
 
+  auto new_cell = std::make_unique<Cell>(*this);
+  new_cell->Set(text);
+  if (new_cell->IsFormula()) {
+    if (CycleDetector(pos, *new_cell)) {
+      throw CircularDependencyException("Cycle detected"s);
+    }
+  }
+
   {
     if (pos.row + 1 > static_cast<int>(table_.size())) {
       table_.resize(pos.row + 1);
@@ -24,11 +32,13 @@ void Sheet::SetCell(Position pos, std::string text) {
       table_[pos.row].resize(pos.col + 1);
     }
 
-    if (table_[pos.row][pos.col] == nullptr) {
-      table_[pos.row][pos.col] = std::make_unique<Cell>(*this);
-    }
+//    if (table_[pos.row][pos.col] == nullptr) {
+//      table_[pos.row][pos.col] = std::make_unique<Cell>(*this);
+//    }
+//
+//    table_[pos.row][pos.col]->Set(text);
 
-    table_[pos.row][pos.col]->Set(text);
+    table_[pos.row][pos.col] = std::move(new_cell);
   }
 
   afterSet(pos);
@@ -185,19 +195,72 @@ void Sheet::validatePosition(Position pos) const {
   }
 }
 
+bool Sheet::CycleDetector(Position position, const CellInterface &cell) {
+  enum Color {
+    WHITE,
+    GRAY,
+    BLACK
+  };
+
+  std::unordered_map<Position, Color, PositionHasher> visited;
+  std::stack<Position> stack;
+  visited[position] = GRAY;
+  //stack.push(position);
+  for (auto const &elem : cell.GetReferencedCells()) {
+    // Либо ссылка на самого себя, либо ошибка формирования ссылок
+    if (visited.count(elem) > 0) {
+      return true;
+    }
+    stack.push(elem);
+    visited[elem] = WHITE;
+  }
+
+  while (!stack.empty()) {
+    auto from = stack.top();
+    stack.pop();
+    bool process = true;
+    {
+      auto it = visited.find(from);
+      if (it == visited.end()) {
+        throw std::logic_error("Element out of processed status");
+      }
+
+      // Если пришли в вершину второй раз в цвете GRAY значит все исходящие ребра обработаны
+      if (it->second == GRAY) {
+        visited[from] = Color::BLACK;
+        process = false;
+      }
+    }
+
+    if (process) {
+      visited[from] = Color::GRAY;
+      stack.push(from);
+
+      // Обход связанных вершин
+      auto from_cell = this->GetCell(from);
+      if (from_cell != nullptr) {
+        for (auto const to : from_cell->GetReferencedCells()) {
+          auto it = visited.find(to);
+          if (it != visited.end()) {
+            if (it->second != WHITE) {
+              return true;
+            }
+          }
+
+          // В первый раз в вершину приходим в начале обхода
+          visited[to] = Color::WHITE;
+          stack.push(to);
+        }
+      }
+    }
+
+  }
+
+  return false;
+}
+
 std::unique_ptr<SheetInterface> CreateSheet() {
   return std::make_unique<Sheet>();
 }
 
-//size_t PositionHasher::operator()(const Position position) const {
-//  std::hash<int> hasher;
-//  size_t value = 31;
-//  if (position.col) {
-//    value += hasher(position.col) * 31;
-//  }
-//  if (position.row) {
-//    value += hasher(position.row) * 31 * 31;
-//  }
-//  return value;
-//}
-//
+

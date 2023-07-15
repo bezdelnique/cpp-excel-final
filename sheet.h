@@ -6,11 +6,6 @@
 #include <unordered_map>
 #include <map>
 
-//class PositionHasher {
-// public:
-//  size_t operator()(const Position position) const;
-//};
-
 using Row = std::vector<std::unique_ptr<Cell>>;
 
 class Sheet : public SheetInterface {
@@ -37,4 +32,6 @@ class Sheet : public SheetInterface {
   void afterClear(Position pos);
   void afterSet(Position pos);
   void validatePosition(Position pos) const;
+
+  bool CycleDetector(Position position, const CellInterface &cell);
 };

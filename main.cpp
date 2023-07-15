@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <cassert>
+#include <sstream>
 
 using namespace std::literals;
 using namespace std;
@@ -155,6 +156,14 @@ void PrintSheet(const std::unique_ptr<SheetInterface> &sheet) {
   std::cout << std::endl;
 }
 
+void PrintSheet(const std::unique_ptr<SheetInterface> &sheet, std::stringstream &ss) {
+  ss << sheet->GetPrintableSize() << std::endl;
+  sheet->PrintTexts(ss);
+  ss << std::endl;
+  sheet->PrintValues(ss);
+  ss << std::endl;
+}
+
 void TestClearCells5x5() {
   {
     auto sheet = CreateSheet();
@@ -164,12 +173,118 @@ void TestClearCells5x5() {
 
     sheet->ClearCell(Position{3, 3});
 
+    std::stringstream ss;
     for (int i = 5; i >= 0; --i) {
       sheet->ClearCell(Position{i, i});
-      PrintSheet(sheet);
+      //PrintSheet(sheet);
+      PrintSheet(sheet, ss);
     }
   }
 
+}
+
+
+// == TestSimple ==
+
+
+void TestSimpleCell() {
+  auto sheet = CreateSheet();
+
+  // Set / reset
+  {
+    Cell cell{*sheet};
+    cell.Set("text"s);
+    assert(std::get<std::string>(cell.GetValue()) == "text"s);
+
+    cell.Set("=1+1"s);
+    assert(std::get<double>(cell.GetValue()) == 2);
+  }
+
+  cerr << "TestSimpleCell OK"s << endl;
+}
+
+void TestSimpleTableCell() {
+  auto sheet = CreateSheet();
+  sheet->SetCell("A1"_pos, "=1"s);
+  sheet->SetCell("A2"_pos, "=1"s);
+
+  //auto formula = ParseFormula("3+1");
+  auto formula = ParseFormula("A1+A2");
+  auto result = formula->Evaluate(*sheet);
+  //auto refs = formula->GetReferencedCells();
+  //std::cout << std::get<double>(result) << std::endl;
+  assert(std::get<double>(result) == 2);
+
+  cerr << "TestSimpleTableCell OK"s << endl;
+}
+
+void TestSimpleSearchCycles() {
+  // Negative
+  {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A1"_pos, "=3"s);
+    sheet->SetCell("A2"_pos, "=A1+1"s);
+    assert(std::get<double>(sheet->GetCell("A2"_pos)->GetValue()) == 4);
+  }
+
+  // Negative
+  {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A1"_pos, "=3"s);
+    sheet->SetCell("A2"_pos, "=A1+1"s);
+    sheet->SetCell("A3"_pos, "=A1+A2"s);
+    assert(std::get<double>(sheet->GetCell("A2"_pos)->GetValue()) == 4);
+  }
+
+  // Positive: self
+  {
+    auto sheet = CreateSheet();
+    try {
+      sheet->SetCell("A1"_pos, "=A1"s);
+      assert(false);
+    } catch (CircularDependencyException &) {
+      assert(true);
+    }
+    catch (...) {
+      assert(false);
+    }
+  }
+
+  // Positive: Set
+  {
+    auto sheet = CreateSheet();
+    try {
+      sheet->SetCell("A1"_pos, "=3"s);
+      sheet->SetCell("A3"_pos, "=C4+1"s);
+      sheet->SetCell("C4"_pos, "=A2-1"s);
+      sheet->SetCell("A2"_pos, "=A1+A3"s);
+      assert(false);
+    } catch (CircularDependencyException &) {
+      assert(true);
+    }
+    catch (...) {
+      assert(false);
+    }
+  }
+
+  // Positive: Set again
+  {
+    auto sheet = CreateSheet();
+    try {
+      sheet->SetCell("A1"_pos, "=3"s);
+      sheet->SetCell("A2"_pos, "=A1+1"s);
+      sheet->SetCell("A3"_pos, "=A1+A2"s);
+      sheet->SetCell("A1"_pos, "=A3"s);
+      assert(false);
+    } catch (CircularDependencyException &) {
+      assert(true);
+    }
+    catch (...) {
+      assert(false);
+    }
+  }
+
+  cerr << "TestSimpleSearchCycles OK"s << endl;
 }
 
 void TestClearEmptyCell() {
@@ -192,25 +307,19 @@ void TestClearEmptyCell() {
 
 
 int main() {
-//  TestRunner tr;
-//  RUN_TEST(tr, TestEmpty);
-//  RUN_TEST(tr, TestInvalidPosition);
-//  RUN_TEST(tr, TestSetCellPlainText);
-//  RUN_TEST(tr, TestClearCell);
-//  RUN_TEST(tr, TestPrint);
-//  TestExample();
-//  TestClearEmptyCell();
-//  TestClearCells5x5();
+  TestRunner tr;
+  RUN_TEST(tr, TestEmpty);
+  RUN_TEST(tr, TestInvalidPosition);
+  RUN_TEST(tr, TestSetCellPlainText);
+  RUN_TEST(tr, TestClearCell);
+  RUN_TEST(tr, TestPrint);
+  TestExample();
+  TestClearEmptyCell();
+  TestClearCells5x5();
 
-  auto sheet = CreateSheet();
-  sheet->SetCell("A1"_pos, "=1"s);
-  sheet->SetCell("A2"_pos, "=1"s);
-
-  //auto formula = ParseFormula("3+1");
-  auto formula = ParseFormula("A1+A2");
-  auto result = formula->Evaluate(*sheet);
-  auto refs = formula->GetReferencedCells();
-  std::cout << std::get<double>(result) << std::endl;
+  TestSimpleCell();
+  TestSimpleTableCell();
+  TestSimpleSearchCycles();
 
   return 0;
 }
