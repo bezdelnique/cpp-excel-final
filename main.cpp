@@ -287,24 +287,48 @@ void TestSimpleSearchCycles() {
   cerr << "TestSimpleSearchCycles OK"s << endl;
 }
 
-
 void TestSimpleCacheInvalidation() {
-  // Negative
+  // missed / hit
   {
-//    auto sheet = CreateSheet();
-//    sheet->SetCell("A1"_pos, "=3"s);
-//    sheet->SetCell("A2"_pos, "=A1+1"s);
-//    assert(std::get<double>(sheet->GetCell("A2"_pos)->GetValue()) == 4);
-
     auto sheet = CreateSheet();
-    Cell cell1{*sheet};
-    cell1.Set(""s);
+    CellCacheStat::Reset();
+    sheet->SetCell("A1"_pos, "3"s);
+    sheet->SetCell("A2"_pos, "=A1+1"s);
+    assert(CellCacheStat::invalidate == 0);
+    assert(CellCacheStat::hit == 0);
+    assert(CellCacheStat::missed == 0);
+
+    CellCacheStat::Reset();
+    assert(std::get<double>(sheet->GetCell("A2"_pos)->GetValue()) == 4);
+    assert(CellCacheStat::invalidate == 0);
+    assert(CellCacheStat::hit == 0);
+    assert(CellCacheStat::missed == 1);
+
+    CellCacheStat::Reset();
+    assert(std::get<double>(sheet->GetCell("A2"_pos)->GetValue()) == 4);
+    assert(CellCacheStat::invalidate == 0);
+    assert(CellCacheStat::hit == 1);
+    assert(CellCacheStat::missed == 0);
+  }
 
 
+  // invalidate
+  {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A1"_pos, "3"s);
+    sheet->SetCell("A2"_pos, "=A1+1"s); // 4
+    sheet->SetCell("C4"_pos, "=A2+1"s); // 5
+
+    assert(std::get<double>(sheet->GetCell("C4"_pos)->GetValue()) == 5);
+    assert(CellCacheStat::invalidate == 0);
+
+    CellCacheStat::Reset();
+    sheet->SetCell("A1"_pos, "4"s);
+    assert(CellCacheStat::invalidate == 2);
+    assert(std::get<double>(sheet->GetCell("C4"_pos)->GetValue()) == 6);
   }
 
 }
-
 
 void TestClearEmptyCell() {
   {

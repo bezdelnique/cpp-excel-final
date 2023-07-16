@@ -11,25 +11,28 @@ using Row = std::vector<std::unique_ptr<Cell>>;
 class Sheet : public SheetInterface {
  private:
   class BackwardListManager {
-    void AddBackwardLink(Position from, Position to) {
-//      auto it = backward_list_.find(pos);
-//      if (it != backward_list_.end()) {
-//        throw std::logic_error("Удаление существуюей обратной ссылки"s);
-//      }
-//      backward_list_.emplace(pos);
+   public:
+    void AddBackwardLink(Position to, Position from) {
+      auto it = backward_list_[from].find(to);
+      if (it != backward_list_[from].end()) {
+        throw std::logic_error("Добавление существуюей обратной ссылки"s);
+      }
+      backward_list_[from].emplace(to);
     }
 
-    void RemoveBackwardLink(Position from, Position to) {
-//      auto it = backward_list_.find(pos);
-//      if (it == backward_list_.end()) {
-//        throw std::logic_error("Удаление несуществуюей обратной ссылки"s);
-//      }
-//      backward_list_.erase(it);
+    void RemoveBackwardLink(Position to, Position from) {
+      auto it = backward_list_[from].find(to);
+      if (it == backward_list_[from].end()) {
+        throw std::logic_error("Удаление несуществуюей обратной ссылки"s);
+      }
+      backward_list_[from].erase(it);
     }
 
-    std::vector<Position> GetBackwardList(Position pos) const {
-//      std::vector vec(backward_list_.at(pos).begin(), backward_list_.at(pos).end());
-//      return vec;
+    std::vector<Position> GetBackwardList(Position from) const {
+      if (backward_list_.count(from) > 0) {
+        std::vector vec(backward_list_.at(from).begin(), backward_list_.at(from).end());
+        return vec;
+      }
       return {};
     }
 
@@ -64,4 +67,5 @@ class Sheet : public SheetInterface {
 
   bool CycleDetector(Position position, const CellInterface &cell);
   void UpdateBackwardLink(Position pos, const std::unique_ptr<Cell> &new_cell);
+  void InvalidateCache(Position pos);
 };

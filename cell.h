@@ -13,6 +13,19 @@ enum CellType {
 
 using namespace std::literals;
 
+struct CellCacheStat {
+ public:
+  inline static size_t hit = 0;
+  inline static size_t missed = 0;
+  inline static size_t invalidate = 0;
+
+  static void Reset() {
+    hit = 0;
+    missed = 0;
+    invalidate = 0;
+  }
+};
+
 class Cell : public CellInterface {
  private:
   class CellValue {
@@ -88,13 +101,22 @@ class Cell : public CellInterface {
     }
 
     Value GetValue() override {
-      //auto result = ParseFormula(std::string(formula_))->Evaluate(sheet_);
-      auto result = ParseFormula(raw_value_.substr(1))->Evaluate(sheet_);
-      if (std::holds_alternative<FormulaError>(result)) {
-        return std::get<FormulaError>(result);
+      if (cached_.has_value()) {
+        ++CellCacheStat::hit;
       } else {
-        return std::get<double>(result);
+        ++CellCacheStat::missed;
+
+        //auto result = ParseFormula(std::string(formula_))->Evaluate(sheet_);
+        auto result = ParseFormula(raw_value_.substr(1))->Evaluate(sheet_);
+        // Ошибки не кэшируем
+        if (std::holds_alternative<FormulaError>(result)) {
+          return std::get<FormulaError>(result);
+        } else {
+          cached_ = std::get<double>(result);
+        }
       }
+
+      return cached_.value();
     }
 
     std::string GetText() override {
@@ -114,6 +136,7 @@ class Cell : public CellInterface {
     }
 
     void InvalidateCache() override {
+      ++CellCacheStat::invalidate;
       cached_.reset();
     }
 
@@ -135,11 +158,11 @@ class Cell : public CellInterface {
   std::string GetText() const override;
   std::vector<Position> GetReferencedCells() const override;
   //std::vector<Position> GetForwardList() const ;
-  std::vector<Position> GetBackwardList() const;
+  //std::vector<Position> GetBackwardList() const;
 
   void InvalidateCache() const;
-  void AddBackwardLink(Position pos);
-  void RemoveBackwardLink(Position pos);
+  //void AddBackwardLink(Position pos);
+  //void RemoveBackwardLink(Position pos);
 
   bool IsFormula() const;
 
@@ -153,7 +176,7 @@ class Cell : public CellInterface {
   //std::vector<Position> referenced_cells_;
   // Ячейки которые ссылаются на нас
   // Нужно обеспечить быстрый поиск для последующего удаления
-  std::set<Position> backward_list_;
+  //std::set<Position> backward_list_;
   //std::string raw_value_;
   std::unique_ptr<CellValue> value_holder_;
 

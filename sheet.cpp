@@ -23,7 +23,6 @@ void Sheet::SetCell(Position pos, std::string text) {
     }
   }
 
-
   {
     if (pos.row + 1 > static_cast<int>(table_.size())) {
       table_.resize(pos.row + 1);
@@ -40,6 +39,7 @@ void Sheet::SetCell(Position pos, std::string text) {
 //    table_[pos.row][pos.col]->Set(text);
 
 
+    InvalidateCache(pos);
     UpdateBackwardLink(pos, new_cell);
     table_[pos.row][pos.col] = std::move(new_cell);
   }
@@ -47,30 +47,44 @@ void Sheet::SetCell(Position pos, std::string text) {
   afterSet(pos);
 }
 
-void Sheet::UpdateBackwardLink(Position pos, const std::unique_ptr<Cell> &new_cell) {
-//  backward_list_manager_.
+void Sheet::InvalidateCache(Position pos) {
+  {
+    auto cell = reinterpret_cast<Cell *>(GetCell(pos));
+    if (cell != nullptr) {
+      cell->InvalidateCache();
+    }
+  }
 
-//  if (table_[pos.row][pos.col] != nullptr) {
-//    // Инвалидировать кеш у зависимых ячеек
-//    table_[pos.row][pos.col]->InvalidateCache();
-//
-//    // Удалить обратные ссылки
-//    for (auto const &pos_: table_[pos.row][pos.col]->GetReferencedCells()) {
-//      auto cell = reinterpret_cast<Cell*>(GetCell(pos_));
-//      cell->RemoveBackwardLink(pos);
-//    }
-//
-//    // Сохранение обратных ссылок если ячейка содержит значение
-//    for (auto const pos_ : table_[pos.row][pos.col]->GetBackwardList()) {
-//      new_cell->AddBackwardLink(pos_);
-//    }
-//  }
-//
-//  // Добавить новые обратные ссылки
-//  for (auto const &pos_: new_cell->GetReferencedCells()) {
-//    auto cell = reinterpret_cast<Cell*>(GetCell(pos_));
-//    cell->AddBackwardLink(pos);
-//  }
+  for (auto const &to : backward_list_manager_.GetBackwardList(pos)) {
+    InvalidateCache(to);
+  }
+}
+
+void Sheet::UpdateBackwardLink(Position pos, const std::unique_ptr<Cell> &new_cell) {
+  if (table_[pos.row][pos.col] != nullptr) {
+    // Инвалидировать кеш у зависимых ячеек
+    table_[pos.row][pos.col]->InvalidateCache();
+
+    // Удалить обратные ссылки
+    for (auto const &from : table_[pos.row][pos.col]->GetReferencedCells()) {
+      //auto cell = reinterpret_cast<Cell *>(GetCell(from));
+      //cell->RemoveBackwardLink(pos);
+      backward_list_manager_.RemoveBackwardLink(pos, from);
+    }
+
+    // Сохранение обратных ссылок со предыдущей версии ячейки
+    for (auto const from : backward_list_manager_.GetBackwardList(pos)) {
+      //new_cell->AddBackwardLink(from);
+      backward_list_manager_.AddBackwardLink(pos, from);
+    }
+  }
+
+  // Добавить новые обратные ссылки
+  for (auto const &from : new_cell->GetReferencedCells()) {
+    //auto cell = reinterpret_cast<Cell*>(GetCell(from));
+    //cell->AddBackwardLink(pos);
+    backward_list_manager_.AddBackwardLink(pos, from);
+  }
 
 }
 

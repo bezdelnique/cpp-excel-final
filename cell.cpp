@@ -6,7 +6,9 @@
 #include <optional>
 #include <sstream>
 
-Cell::Cell(SheetInterface &sheet) : sheet_(sheet), value_holder_(std::make_unique<CellValueEmpty>()) {};
+Cell::Cell(SheetInterface &sheet) :
+    sheet_(sheet),
+    value_holder_(std::make_unique<CellValueEmpty>()) {};
 
 Cell::~Cell() {}
 
@@ -15,7 +17,6 @@ void Cell::Set(std::string text) {
     //cell_type_ = CellType::FORMULA;
     //std::forward_list<Position> forward_list_copy(referenced_cells_);
     //forward_list_copy.push_front(this.)
-
     value_holder_ = std::make_unique<CellValueFormula>(sheet_, text);
   } else {
     //cell_type_ = CellType::STRING;
@@ -25,7 +26,8 @@ void Cell::Set(std::string text) {
 }
 
 void Cell::Clear() {
-
+  value_holder_ = std::make_unique<CellValueEmpty>();
+  InvalidateCache();
 }
 
 Cell::Value Cell::GetValue() const {
@@ -51,14 +53,13 @@ bool Cell::IsFormula() const {
 }
 
 void Cell::InvalidateCache() const {
-  for (auto const pos : backward_list_) {
-    // Предполагается что циклических ссылок нет и дополнительные проверки не нужны
-    Cell *cell = reinterpret_cast<Cell *>(sheet_.GetCell(pos));
-    cell->InvalidateCache();
-  }
+//  for (auto const pos : backward_list_) {
+//    // Предполагается что циклических ссылок нет и дополнительные проверки не нужны
+//    Cell *cell = reinterpret_cast<Cell *>(sheet_.GetCell(pos));
+//    cell->InvalidateCache();
+//  }
   value_holder_->InvalidateCache();
 }
-
 
 std::ostream &operator<<(std::ostream &output, const CellInterface::Value &value) {
   std::visit(
