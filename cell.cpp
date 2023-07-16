@@ -25,10 +25,10 @@ void Cell::Set(std::string text) {
   //value_ = text;
 }
 
-void Cell::Clear() {
-  value_holder_ = std::make_unique<CellValueEmpty>();
-  InvalidateCache();
-}
+//void Cell::Clear() {
+//  value_holder_ = std::make_unique<CellValueEmpty>();
+//  //InvalidateCache();
+//}
 
 Cell::Value Cell::GetValue() const {
   return value_holder_->GetValue();

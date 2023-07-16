@@ -152,7 +152,7 @@ class Cell : public CellInterface {
   ~Cell();
 
   void Set(std::string text);
-  void Clear();
+  // void Clear();
 
   Value GetValue() const override;
   std::string GetText() const override;
