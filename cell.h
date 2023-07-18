@@ -34,7 +34,9 @@ class Cell : public CellInterface {
     virtual std::string GetText() = 0;
     virtual CellType GetType() = 0;
     virtual void InvalidateCache() {
-
+    }
+    virtual bool IsValid() {
+      return true;
     }
     virtual std::vector<Position> GetReferencedCells() {
       throw std::logic_error("Not implemented"s);
@@ -53,6 +55,7 @@ class Cell : public CellInterface {
     virtual CellType GetType() override {
       return CellType::EMPTY;
     }
+
   };
 
   class CellValueText : public CellValue {
@@ -101,6 +104,10 @@ class Cell : public CellInterface {
     }
 
     Value GetValue() override {
+      if (!IsValid()) {
+        return FormulaError(FormulaError::Category::Ref);
+      }
+
       if (cached_.has_value()) {
         ++CellCacheStat::hit;
       } else {
@@ -129,6 +136,15 @@ class Cell : public CellInterface {
 
     CellType GetType() override {
       return CellType::FORMULA;
+    }
+
+    bool IsValid() override {
+      for (auto const &pos : referenced_cells_) {
+        if (pos == Position::NONE) {
+          return false;
+        }
+      }
+      return true;
     }
 
     std::vector<Position> GetReferencedCells() override {
@@ -165,6 +181,7 @@ class Cell : public CellInterface {
   //void RemoveBackwardLink(Position pos);
 
   bool IsFormula() const;
+  bool IsValid() const;
 
  private:
   //Position position_;

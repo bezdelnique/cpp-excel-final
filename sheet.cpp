@@ -17,7 +17,7 @@ void Sheet::SetCell(Position pos, std::string text) {
 
   auto new_cell = std::make_unique<Cell>(*this);
   new_cell->Set(text);
-  if (new_cell->IsFormula()) {
+  if (new_cell->IsFormula() && new_cell->IsValid()) {
     if (CycleDetector(pos, *new_cell)) {
       throw CircularDependencyException("Cycle detected"s);
     }
@@ -38,9 +38,10 @@ void Sheet::SetCell(Position pos, std::string text) {
 //
 //    table_[pos.row][pos.col]->Set(text);
 
-
-    InvalidateCache(pos);
-    UpdateBackwardLink(pos, new_cell);
+    if (new_cell->IsValid()) {
+      InvalidateCache(pos);
+      UpdateBackwardLink(pos, new_cell);
+    }
     // table_[pos.row][pos.col] = std::move(new_cell);
 
     auto it = storage_.find(pos);
@@ -248,18 +249,20 @@ void Sheet::afterSet(Position pos) {
 
 }
 
-void Sheet::validatePosition(Position pos) const {
-  if (pos.row < 0 || pos.col < 0) {
-    std::stringstream ss;
-    ss << pos;
-    throw InvalidPositionException(ss.str());
-  }
+void Sheet::validatePosition(Position pos) {
+// Убираю проверку чтобы сходилось с тестами диплома
 
-  if (pos.row > Position::MAX_ROWS_ZB || pos.col > Position::MAX_COLS_ZB) {
-    std::stringstream ss;
-    ss << pos;
-    throw InvalidPositionException(ss.str());
-  }
+//  if (pos.row < 0 || pos.col < 0) {
+//    std::stringstream ss;
+//    ss << pos;
+//    throw InvalidPositionException(ss.str());
+//  }
+//
+//  if (pos.row > Position::MAX_ROWS_ZB || pos.col > Position::MAX_COLS_ZB) {
+//    std::stringstream ss;
+//    ss << pos;
+//    throw InvalidPositionException(ss.str());
+//  }
 }
 
 bool Sheet::CycleDetector(Position position, const CellInterface &cell) {

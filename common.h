@@ -60,8 +60,6 @@ class FormulaError {
   Category category_;
 };
 
-std::ostream &operator<<(std::ostream &output, FormulaError fe);
-std::ostream &operator<<(std::ostream &output, Position pos);
 
 // Исключение, выбрасываемое при попытке задать синтаксически некорректную
 // формулу
@@ -170,3 +168,6 @@ class SheetInterface {
 
 // Создаёт готовую к работе пустую таблицу.
 std::unique_ptr<SheetInterface> CreateSheet();
+
+std::ostream &operator<<(std::ostream &output, FormulaError fe);
+std::ostream &operator<<(std::ostream &output, Position pos);

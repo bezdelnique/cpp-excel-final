@@ -64,7 +64,7 @@ class Sheet : public SheetInterface {
 
   void afterClear(Position pos);
   void afterSet(Position pos);
-  void validatePosition(Position pos) const;
+  static void validatePosition(Position pos);
 
   bool CycleDetector(Position position, const CellInterface &cell);
   void UpdateBackwardLink(Position pos, const std::unique_ptr<Cell> &new_cell);

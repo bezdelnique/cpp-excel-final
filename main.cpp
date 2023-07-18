@@ -346,6 +346,116 @@ void TestClearEmptyCell() {
 
 }
 
+void TestSimpleLinkToEmptyCell() {
+  // Если формула содержит индекс пустой ячейки, предполагаем, что значение пустой ячейки — 0.
+  {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A2"_pos, "=A1+2"s);
+    assert(std::get<double>(sheet->GetCell("A2"_pos)->GetValue()) == 2);
+  }
+
+  {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A2"_pos, "=2/A1"s);
+    assert(std::get<FormulaError>(sheet->GetCell("A2"_pos)->GetValue()).GetCategory() == FormulaError::Category::Div0);
+  }
+
+  {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A2"_pos, "=A1/2"s);
+    assert(std::get<double>(sheet->GetCell("A2"_pos)->GetValue()) == 0);
+  }
+
+  cerr << "TestSimpleLinkToEmptyCell OK"s << endl;
+}
+
+void TestSimpleLinkToTextCell() {
+  // Если ячейку, чей индекс входит в формулу, нельзя проинтерпретировать как число, возникает ошибка нового типа:
+  // FormulaError — нет значения #VALUE! В следующем примере в ячейке А2 находится текст, поэтому вычисление формулы в ячейке С2 (=А3/А2) вернёт эту ошибку.
+  {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A1"_pos, "hello"s);
+    sheet->SetCell("A2"_pos, "=A1+2"s);
+    assert(std::get<FormulaError>(sheet->GetCell("A2"_pos)->GetValue()).GetCategory() == FormulaError::Category::Value);
+  }
+
+  cerr << "TestSimpleLinkToTextCell OK"s << endl;
+}
+
+void TestSimpleLinkOutOfBound() {
+  // Формула может содержать ссылку на ячейку, которая выходит за границы возможного размера таблицы,
+  // например C2 (=A1234567+ZZZZ1). Такая формула может быть создана, но не может быть вычислена, поэтому
+  // её вычисление вернёт ошибку #REF!
+  {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A1"_pos, "=A1234567+ZZZZ1"s);
+    assert(std::get<FormulaError>(sheet->GetCell("A1"_pos)->GetValue()).GetCategory() == FormulaError::Category::Ref);
+  }
+
+  cerr << "TestSimpleLinkOutOfBound OK"s << endl;
+}
+
+void TestSimpleErrorPropagation() {
+  // Ref
+  {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A1"_pos, "=A1234567+ZZZZ1"s);
+    sheet->SetCell("A2"_pos, "=A1"s);
+    assert(std::get<FormulaError>(sheet->GetCell("A2"_pos)->GetValue()).GetCategory() == FormulaError::Category::Ref);
+  }
+
+  // Div
+  {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A1"_pos, "=1/0"s);
+    sheet->SetCell("A2"_pos, "=A1"s);
+    assert(std::get<FormulaError>(sheet->GetCell("A2"_pos)->GetValue()).GetCategory() == FormulaError::Category::Div0);
+  }
+
+  // Value
+  {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A1"_pos, "hello"s);
+    sheet->SetCell("A2"_pos, "=A1+2"s);
+    sheet->SetCell("A3"_pos, "=A2"s);
+    assert(std::get<FormulaError>(sheet->GetCell("A3"_pos)->GetValue()).GetCategory() == FormulaError::Category::Value);
+  }
+
+  cerr << "TestSimpleErrorPropagation OK"s << endl;
+}
+
+void TestSimpleErrorText() {
+  {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A1"_pos, "=1/0"s);
+
+    std::stringstream ss;
+    ss << sheet->GetCell("A1"_pos)->GetValue();
+    assert(ss.str() == "#DIV/0!"s);
+  }
+
+
+  {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A1"_pos, "hello"s);
+    sheet->SetCell("A2"_pos, "=A1"s);
+
+    std::stringstream ss;
+    ss << sheet->GetCell("A2"_pos)->GetValue();
+    assert(ss.str() == "#VALUE!"s);
+  }
+
+  {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A1"_pos, "=A1234567+ZZZZ1"s);
+
+    std::stringstream ss;
+    ss << sheet->GetCell("A1"_pos)->GetValue();
+    assert(ss.str() == "#REF!"s);
+  }
+
+}
+
 }  // namespace
 
 
@@ -364,6 +474,12 @@ int main() {
   TestSimpleTableCell();
   TestSimpleSearchCycles();
   TestSimpleCacheInvalidation();
+
+  TestSimpleLinkToEmptyCell();
+  TestSimpleLinkToTextCell();
+  TestSimpleLinkOutOfBound();
+  TestSimpleErrorPropagation();
+  TestSimpleErrorText();
 
   return 0;
 }

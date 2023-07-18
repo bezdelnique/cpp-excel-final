@@ -137,10 +137,9 @@ bool FormulaError::operator==(FormulaError rhs) const {
 
 std::string_view FormulaError::ToString() const {
   static std::map<Category, std::string> map = {
-      {Category::Ref, "Ref"s},
-      {Category::Value, "Value"s},
-      {Category::Div0, "Div0"s},
+      {Category::Ref, "#REF!"s},
+      {Category::Value, "#VALUE!"s},
+      {Category::Div0, "#DIV/0!"s},
   };
   return map.at(category_);
 }
-

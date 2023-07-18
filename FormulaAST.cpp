@@ -432,8 +432,17 @@ void FormulaAST::GetCells(std::vector<std::string> &out) const {
 
 double FormulaAST::Execute(const SheetInterface &sheet) const {
   CellValueResolver resolver = [&sheet](std::string_view address) -> double {
-    auto value = sheet.GetCell(Position::FromString(address))->GetValue();
+    auto pos = Position::FromString(address);
+    if (pos == Position::NONE) {
+      throw FormulaError(FormulaError::Category::Ref);
+    }
 
+    auto cell = sheet.GetCell(pos);
+    if (cell == nullptr) {
+      return 0;
+    }
+
+    auto value = cell->GetValue();
     // FIXME
     if (std::holds_alternative<std::string>(value)) {
       double result = 0;
@@ -441,7 +450,8 @@ double FormulaAST::Execute(const SheetInterface &sheet) const {
       std::istringstream in(strValue);
       in >> result;
       if (!in) {
-        throw ParsingError("Invalid number: " + strValue);
+        //throw ParsingError("Invalid number: " + strValue);
+        throw FormulaError(FormulaError::Category::Value);
       }
       return result;
     }

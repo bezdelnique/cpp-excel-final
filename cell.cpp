@@ -52,6 +52,15 @@ bool Cell::IsFormula() const {
   return value_holder_->GetType() == FORMULA;
 }
 
+bool Cell::IsValid() const {
+  for (auto const &pos: Cell::GetReferencedCells()) {
+    if (pos == Position::NONE) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void Cell::InvalidateCache() const {
 //  for (auto const pos : backward_list_) {
 //    // Предполагается что циклических ссылок нет и дополнительные проверки не нужны
