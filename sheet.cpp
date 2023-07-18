@@ -276,13 +276,19 @@ bool Sheet::CycleDetector(Position position, const CellInterface &cell) {
   std::stack<Position> stack;
   visited[position] = GRAY;
   //stack.push(position);
-  for (auto const &elem: cell.GetReferencedCells()) {
+  for (auto const &to: cell.GetReferencedCells()) {
     // Либо ссылка на самого себя, либо ошибка формирования ссылок
-    if (visited.count(elem) > 0) {
+    if (position == to) {
       return true;
     }
-    stack.push(elem);
-    visited[elem] = WHITE;
+
+    // Вершина может встречаться несколько раз
+    // =C3 + B2 / C3
+    auto it = visited.find(to);
+    if (it == visited.end()) {
+      stack.push(to);
+      visited[to] = WHITE;
+    }
   }
 
   while (!stack.empty()) {
@@ -310,16 +316,17 @@ bool Sheet::CycleDetector(Position position, const CellInterface &cell) {
       auto from_cell = this->GetCell(from);
       if (from_cell != nullptr) {
         for (auto const to: from_cell->GetReferencedCells()) {
+          // Вершина может встречаться несколько раз
+          // =C3 + B2 / C3
           auto it = visited.find(to);
-          if (it != visited.end()) {
-            if (it->second != WHITE) {
-              return true;
-            }
+          if (it == visited.end()) {
+//            if (it->second != WHITE) {
+//              return true;
+//            }
+            // В первый раз в вершину приходим в начале обхода
+            visited[to] = Color::WHITE;
+            stack.push(to);
           }
-
-          // В первый раз в вершину приходим в начале обхода
-          visited[to] = Color::WHITE;
-          stack.push(to);
         }
       }
     }

@@ -72,9 +72,9 @@ class Expr {
   virtual ~Expr() = default;
   virtual void Print(std::ostream &out) const = 0;
   virtual void DoPrintFormula(std::ostream &out, ExprPrecedence precedence) const = 0;
-  virtual void DoGetCells(std::vector<std::string> &out) const {
-    // default impl
-  }
+//  virtual void DoGetCells(std::vector<std::string> &out) const {
+//    // default impl
+//  }
 
   //virtual double Evaluate() const = 0;
   virtual double Evaluate(CellValueResolver &resolver) const = 0;
@@ -98,9 +98,9 @@ class Expr {
     }
   }
 
-  void GetCells(std::vector<std::string> &out) const {
-    DoGetCells(out);
-  }
+//  void GetCells(std::vector<std::string> &out) const {
+//    DoGetCells(out);
+//  }
 };
 
 namespace {
@@ -132,10 +132,10 @@ class BinaryOpExpr final : public Expr {
     rhs_->PrintFormula(out, precedence, /* right_child = */ true);
   }
 
-  void DoGetCells(std::vector<std::string> &out) const {
-    lhs_->DoGetCells(out);
-    rhs_->DoGetCells(out);
-  }
+//  void DoGetCells(std::vector<std::string> &out) const {
+//    lhs_->DoGetCells(out);
+//    rhs_->DoGetCells(out);
+//  }
 
   ExprPrecedence GetPrecedence() const override {
     switch (type_) {
@@ -198,9 +198,9 @@ class UnaryOpExpr final : public Expr {
     operand_->PrintFormula(out, precedence);
   }
 
-  void DoGetCells(std::vector<std::string> &out) const {
-    operand_->DoGetCells(out);
-  }
+//  void DoGetCells(std::vector<std::string> &out) const {
+//    operand_->DoGetCells(out);
+//  }
 
   ExprPrecedence GetPrecedence() const override {
     return EP_UNARY;
@@ -234,9 +234,9 @@ class NumberExpr final : public Expr {
     out << value_;
   }
 
-  void DoGetCells(std::vector<std::string> &out) const {
-    // Skip
-  }
+//  void DoGetCells(std::vector<std::string> &out) const {
+//    // Skip
+//  }
 
   ExprPrecedence GetPrecedence() const override {
     return EP_ATOM;
@@ -253,33 +253,36 @@ class NumberExpr final : public Expr {
 
 class CellExpr final : public Expr {
  public:
-  explicit CellExpr(std::string address)
-      : address_(address) {
+  explicit CellExpr(const Position* cell)
+      : cell_(cell) {
   }
 
-  void Print(std::ostream &out) const override {
-    out << address_;
+  void Print(std::ostream& out) const override {
+    if (!cell_->IsValid()) {
+      out << FormulaError::Category::Ref;
+    } else {
+      out << cell_->ToString();
+    }
   }
 
-  void DoPrintFormula(std::ostream &out, ExprPrecedence /* precedence */) const override {
-    out << address_;
+  void DoPrintFormula(std::ostream& out, ExprPrecedence /* precedence */) const override {
+    Print(out);
   }
 
-  void DoGetCells(std::vector<std::string> &out) const {
-    out.push_back(address_);
-  }
+//  void DoGetCells(std::vector<std::string> &out) const {
+//    out.push_back(address_);
+//  }
 
   ExprPrecedence GetPrecedence() const override {
     return EP_ATOM;
   }
 
   double Evaluate(CellValueResolver &resolver) const override {
-    return resolver(address_);
+    return resolver(cell_);
   }
 
  private:
-  //double value_ = -1;
-  std::string address_;
+  const Position* cell_;
 };
 
 class ParseASTListener final : public FormulaBaseListener {
@@ -290,6 +293,10 @@ class ParseASTListener final : public FormulaBaseListener {
     args_.clear();
 
     return root;
+  }
+
+  std::forward_list<Position> MoveCells() {
+    return std::move(cells_);
   }
 
  public:
@@ -347,20 +354,15 @@ class ParseASTListener final : public FormulaBaseListener {
     args_.back() = std::move(node);
   }
 
-//  void enterCell(FormulaParser::CellContext *ctx) override {
-//
-//  }
 
   void exitCell(FormulaParser::CellContext *ctx) override {
-    //double value = 0;
-    auto address = ctx->CELL()->getSymbol()->getText();
-    //std::istringstream in(address);
-    //in >> value;
-//    if (!in) {
-//      throw ParsingError("Invalid number: " + address);
-//    }
-
-    auto node = std::make_unique<CellExpr>(address);
+    auto value_str = ctx->CELL()->getSymbol()->getText();
+    auto value = Position::FromString(value_str);
+    if (!value.IsValid()) {
+      throw FormulaException("Invalid position: " + value_str);
+    }
+    cells_.push_front(value);
+    auto node = std::make_unique<CellExpr>(&cells_.front());
     args_.push_back(std::move(node));
   }
 
@@ -370,6 +372,7 @@ class ParseASTListener final : public FormulaBaseListener {
 
  private:
   std::vector<std::unique_ptr<Expr>> args_;
+  std::forward_list<Position> cells_;
 };
 
 class BailErrorListener : public antlr4::BaseErrorListener {
@@ -385,7 +388,7 @@ class BailErrorListener : public antlr4::BaseErrorListener {
 }  // namespace
 }  // namespace ASTImpl
 
-FormulaAST ParseFormulaAST(std::istream &in) {
+FormulaAST ParseFormulaAST(std::istream& in) {
   using namespace antlr4;
 
   ANTLRInputStream input(in);
@@ -402,11 +405,11 @@ FormulaAST ParseFormulaAST(std::istream &in) {
   parser.setErrorHandler(error_handler);
   parser.removeErrorListeners();
 
-  tree::ParseTree *tree = parser.main();
+  tree::ParseTree* tree = parser.main();
   ASTImpl::ParseASTListener listener;
   tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
 
-  return FormulaAST(listener.MoveRoot());
+  return FormulaAST(listener.MoveRoot(), listener.MoveCells());
 }
 
 FormulaAST ParseFormulaAST(const std::string &in_str) {
@@ -426,18 +429,18 @@ void FormulaAST::PrintFormula(std::ostream &out) const {
   root_expr_->PrintFormula(out, ASTImpl::EP_ATOM);
 }
 
-void FormulaAST::GetCells(std::vector<std::string> &out) const {
-  root_expr_->GetCells(out);
-}
+//void FormulaAST::GetCells(std::vector<std::string> &out) const {
+//  root_expr_->GetCells(out);
+//}
 
 double FormulaAST::Execute(const SheetInterface &sheet) const {
-  CellValueResolver resolver = [&sheet](std::string_view address) -> double {
-    auto pos = Position::FromString(address);
-    if (pos == Position::NONE) {
-      throw FormulaError(FormulaError::Category::Ref);
-    }
+  CellValueResolver resolver = [&sheet](const Position* pos) -> double {
+//    auto pos = Position::FromString(address);
+//    if (pos == Position::NONE) {
+//      throw FormulaError(FormulaError::Category::Ref);
+//    }
 
-    auto cell = sheet.GetCell(pos);
+    auto cell = sheet.GetCell(*pos);
     if (cell == nullptr) {
       return 0;
     }
@@ -465,9 +468,10 @@ double FormulaAST::Execute(const SheetInterface &sheet) const {
   return root_expr_->Evaluate(resolver);
 }
 
-FormulaAST::FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr)
-    : root_expr_(std::move(root_expr)) {
+FormulaAST::FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr, std::forward_list<Position> cells)
+    : root_expr_(std::move(root_expr))
+    , cells_(std::move(cells)) {
+  cells_.sort();  // to avoid sorting in GetReferencedCells
 }
 
 FormulaAST::~FormulaAST() = default;
-

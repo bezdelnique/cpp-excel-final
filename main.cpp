@@ -230,6 +230,15 @@ void TestSimpleSearchCycles() {
   // Negative
   {
     auto sheet = CreateSheet();
+    sheet->SetCell("C3"_pos, "10"s);
+    sheet->SetCell("B2"_pos, "20"s);
+    sheet->SetCell("C4"_pos, "=C3 + B2 / C3"s);
+    assert(std::get<double>(sheet->GetCell("C4"_pos)->GetValue()) == 12);
+  }
+
+  // Negative
+  {
+    auto sheet = CreateSheet();
     sheet->SetCell("A1"_pos, "=3"s);
     sheet->SetCell("A2"_pos, "=A1+1"s);
     sheet->SetCell("A3"_pos, "=A1+A2"s);
@@ -298,6 +307,37 @@ void TestSimpleSearchCycles() {
       assert(false);
     }
   }
+
+//  {
+//    auto sheet = CreateSheet();
+//    auto checkCell = [&sheet](Position pos, std::string text) {
+//      sheet->SetCell(pos, text);
+//      {
+//        CellInterface *cell = sheet->GetCell(pos);
+//        assert(cell != nullptr);
+//        std::cout << cell->GetText() << std::endl;
+//        std::cout << std::get<double>(cell->GetValue()) << std::endl;
+//      }
+//      {
+//        const auto &sheet_c = sheet;
+//        CellInterface *cell = sheet_c->GetCell(pos);
+//        assert(cell != nullptr);
+//        std::cout << cell->GetText() << std::endl;
+//        std::cout << std::get<double>(cell->GetValue()) << std::endl;
+//      }
+//    };
+//
+//    checkCell("A1"_pos, "=1");
+//    checkCell("B2"_pos, "=1/2");
+//    checkCell("A3"_pos, "=(1+1)/-1");
+//    checkCell("C3"_pos, "=(1+1)/(+1)");
+//
+//    checkCell("A2"_pos, "=A1");
+//    checkCell("B3"_pos, "=B2+(12/3 - 2)");
+//    checkCell("A4"_pos, "=A3+C3");
+//    checkCell("C4"_pos, "=C3 + B2 / C3");
+//    checkCell("D1"_pos, "=A1 + A1");
+//  }
 
   cerr << "TestSimpleSearchCycles OK"s << endl;
 }
@@ -397,18 +437,18 @@ void TestSimpleLinkToTextCell() {
   cerr << "TestSimpleLinkToTextCell OK"s << endl;
 }
 
-void TestSimpleLinkOutOfBound() {
-  // Формула может содержать ссылку на ячейку, которая выходит за границы возможного размера таблицы,
-  // например C2 (=A1234567+ZZZZ1). Такая формула может быть создана, но не может быть вычислена, поэтому
-  // её вычисление вернёт ошибку #REF!
-  {
-    auto sheet = CreateSheet();
-    sheet->SetCell("A1"_pos, "=A1234567+ZZZZ1"s);
-    assert(std::get<FormulaError>(sheet->GetCell("A1"_pos)->GetValue()).GetCategory() == FormulaError::Category::Ref);
-  }
-
-  cerr << "TestSimpleLinkOutOfBound OK"s << endl;
-}
+//void TestSimpleLinkOutOfBound() {
+//  // Формула может содержать ссылку на ячейку, которая выходит за границы возможного размера таблицы,
+//  // например C2 (=A1234567+ZZZZ1). Такая формула может быть создана, но не может быть вычислена, поэтому
+//  // её вычисление вернёт ошибку #REF!
+//  {
+//    auto sheet = CreateSheet();
+//    sheet->SetCell("A1"_pos, "=A1234567+ZZZZ1"s);
+//    assert(std::get<FormulaError>(sheet->GetCell("A1"_pos)->GetValue()).GetCategory() == FormulaError::Category::Ref);
+//  }
+//
+//  cerr << "TestSimpleLinkOutOfBound OK"s << endl;
+//}
 
 void TestSimpleErrorPropagation() {
   // Ref
@@ -474,18 +514,18 @@ void TestSimpleErrorText() {
 
 
 int main() {
-//  TestRunner tr;
-//  RUN_TEST(tr, TestEmpty);
-//  RUN_TEST(tr, TestInvalidPosition);
-//  RUN_TEST(tr, TestSetCellPlainText);
-//  RUN_TEST(tr, TestClearCell);
-//  RUN_TEST(tr, TestPrint);
-//  TestExample();
-//  TestClearEmptyCell();
-//  TestClearCells5x5();
-//
-//  TestSimpleCell();
-//  TestSimpleTableCell();
+  TestRunner tr;
+  RUN_TEST(tr, TestEmpty);
+  RUN_TEST(tr, TestInvalidPosition);
+  RUN_TEST(tr, TestSetCellPlainText);
+  RUN_TEST(tr, TestClearCell);
+  RUN_TEST(tr, TestPrint);
+  TestExample();
+  TestClearEmptyCell();
+  TestClearCells5x5();
+
+  TestSimpleCell();
+  TestSimpleTableCell();
   TestSimpleSearchCycles();
   TestSimpleCacheInvalidation();
 

@@ -13,17 +13,18 @@ class Sheet : public SheetInterface {
   class BackwardListManager {
    public:
     void AddBackwardLink(Position to, Position from) {
-      auto it = backward_list_[from].find(to);
-      if (it != backward_list_[from].end()) {
-        throw std::logic_error("Добавление существуюей обратной ссылки"s);
-      }
+//      auto it = backward_list_[from].find(to);
+//      if (it != backward_list_[from].end()) {
+//        throw std::logic_error("Backlink already exists"s);
+//      }
+      // Возможно добавление повторяющихся значений: =C3 + B2 / C3
       backward_list_[from].emplace(to);
     }
 
     void RemoveBackwardLink(Position to, Position from) {
       auto it = backward_list_[from].find(to);
       if (it == backward_list_[from].end()) {
-        throw std::logic_error("Удаление несуществуюей обратной ссылки"s);
+        throw std::logic_error("Deleted backlink does not exists"s);
       }
       backward_list_[from].erase(it);
     }

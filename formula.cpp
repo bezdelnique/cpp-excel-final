@@ -41,12 +41,13 @@ class Formula : public FormulaInterface {
 
   std::vector<Position> GetReferencedCells() const override {
     std::vector<Position> result;
-    std::vector<std::string> vec;
-    ast_.GetCells(vec);
-    for (auto const &address : vec) {
-      result.push_back(Position::FromString(address));
+    //std::vector<std::string> vec;
+    //ast_.GetCells(vec);
+    // Sorted
+    for (auto const &pos : ast_.GetCells()) {
+      result.push_back(pos);
     }
-    std::sort(result.begin(), result.end());
+    //std::sort(result.begin(), result.end());
     return result;
   };
 
