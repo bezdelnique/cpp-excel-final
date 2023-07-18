@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <map>
 
-using Row = std::vector<std::unique_ptr<Cell>>;
+//using Row = std::vector<std::unique_ptr<Cell>>;
 
 class Sheet : public SheetInterface {
  private:
@@ -56,7 +56,8 @@ class Sheet : public SheetInterface {
   void PrintTexts(std::ostream &output) const override;
 
  private:
-  std::vector<Row> table_;
+  //std::vector<Row> table_;
+  std::unordered_map<Position, std::unique_ptr<Cell>, PositionHasher> storage_;
   std::map<int, size_t> cols;
   std::map<int, size_t> rows;
   BackwardListManager backward_list_manager_;

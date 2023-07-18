@@ -24,13 +24,13 @@ void Sheet::SetCell(Position pos, std::string text) {
   }
 
   {
-    if (pos.row + 1 > static_cast<int>(table_.size())) {
-      table_.resize(pos.row + 1);
-    }
-
-    if (pos.col + 1 > static_cast<int>(table_[pos.row].size())) {
-      table_[pos.row].resize(pos.col + 1);
-    }
+//    if (pos.row + 1 > static_cast<int>(table_.size())) {
+//      table_.resize(pos.row + 1);
+//    }
+//
+//    if (pos.col + 1 > static_cast<int>(table_[pos.row].size())) {
+//      table_[pos.row].resize(pos.col + 1);
+//    }
 
 //    if (table_[pos.row][pos.col] == nullptr) {
 //      table_[pos.row][pos.col] = std::make_unique<Cell>(*this);
@@ -41,7 +41,15 @@ void Sheet::SetCell(Position pos, std::string text) {
 
     InvalidateCache(pos);
     UpdateBackwardLink(pos, new_cell);
-    table_[pos.row][pos.col] = std::move(new_cell);
+    // table_[pos.row][pos.col] = std::move(new_cell);
+
+    auto it = storage_.find(pos);
+    if (it == storage_.end()) {
+      storage_.emplace(pos, std::move(new_cell));
+    } else {
+      it->second = std::move(new_cell);
+    }
+
   }
 
   afterSet(pos);
@@ -55,32 +63,34 @@ void Sheet::InvalidateCache(Position pos) {
     }
   }
 
-  for (auto const &to : backward_list_manager_.GetBackwardList(pos)) {
+  for (auto const &to: backward_list_manager_.GetBackwardList(pos)) {
     InvalidateCache(to);
   }
 }
 
 void Sheet::UpdateBackwardLink(Position pos, const std::unique_ptr<Cell> &new_cell) {
-  if (table_[pos.row][pos.col] != nullptr) {
+  auto cell = GetCell(pos);
+  //if (table_[pos.row][pos.col] != nullptr) {
+  if (cell != nullptr) {
     // Инвалидировать кеш у зависимых ячеек
-    table_[pos.row][pos.col]->InvalidateCache();
+    //table_[pos.row][pos.col]->InvalidateCache();
 
     // Удалить обратные ссылки
-    for (auto const &from : table_[pos.row][pos.col]->GetReferencedCells()) {
+    for (auto const &from: cell->GetReferencedCells()) {
       //auto cell = reinterpret_cast<Cell *>(GetCell(from));
       //cell->RemoveBackwardLink(pos);
       backward_list_manager_.RemoveBackwardLink(pos, from);
     }
 
     // Сохранение обратных ссылок со предыдущей версии ячейки
-    for (auto const from : backward_list_manager_.GetBackwardList(pos)) {
+    for (auto const from: backward_list_manager_.GetBackwardList(pos)) {
       //new_cell->AddBackwardLink(from);
       backward_list_manager_.AddBackwardLink(pos, from);
     }
   }
 
   // Добавить новые обратные ссылки
-  for (auto const &from : new_cell->GetReferencedCells()) {
+  for (auto const &from: new_cell->GetReferencedCells()) {
     //auto cell = reinterpret_cast<Cell*>(GetCell(from));
     //cell->AddBackwardLink(pos);
     backward_list_manager_.AddBackwardLink(pos, from);
@@ -91,26 +101,36 @@ void Sheet::UpdateBackwardLink(Position pos, const std::unique_ptr<Cell> &new_ce
 const CellInterface *Sheet::GetCell(Position pos) const {
   validatePosition(pos);
 
-  if (pos.row < static_cast<int>(table_.size())) {
-    if (pos.col < static_cast<int>(table_[pos.row].size())) {
-      if (table_[pos.row][pos.col] != nullptr) {
-        return table_[pos.row][pos.col].get();
-      }
-    }
+  auto it = storage_.find(pos);
+  if (it != storage_.end()) {
+    return it->second.get();
   }
+
+//  if (pos.row < static_cast<int>(table_.size())) {
+//    if (pos.col < static_cast<int>(table_[pos.row].size())) {
+//      if (table_[pos.row][pos.col] != nullptr) {
+//        return table_[pos.row][pos.col].get();
+//      }
+//    }
+//  }
   return nullptr;
 }
 
 CellInterface *Sheet::GetCell(Position pos) {
   validatePosition(pos);
 
-  if (pos.row < static_cast<int>(table_.size())) {
-    if (pos.col < static_cast<int>(table_[pos.row].size())) {
-      if (table_[pos.row][pos.col] != nullptr) {
-        return table_[pos.row][pos.col].get();
-      }
-    }
+  auto it = storage_.find(pos);
+  if (it != storage_.end()) {
+    return it->second.get();
   }
+
+//  if (pos.row < static_cast<int>(table_.size())) {
+//    if (pos.col < static_cast<int>(table_[pos.row].size())) {
+//      if (table_[pos.row][pos.col] != nullptr) {
+//        return table_[pos.row][pos.col].get();
+//      }
+//    }
+//  }
   return nullptr;
 }
 
@@ -118,9 +138,11 @@ void Sheet::ClearCell(Position pos) {
   validatePosition(pos);
 
   bool found = false;
-  CellInterface *cell = GetCell(pos);
-  if (cell != nullptr) {
-    table_[pos.row][pos.col] = nullptr;
+  //CellInterface *cell = GetCell(pos);
+  auto it = storage_.find(pos);
+  if (it != storage_.end()) {
+    //table_[pos.row][pos.col] = nullptr;
+    it->second = nullptr;
     found = true;
   }
 
@@ -130,7 +152,8 @@ void Sheet::ClearCell(Position pos) {
 }
 
 Size Sheet::GetPrintableSize() const {
-  if (table_.empty()) {
+  //if (table_.empty()) {
+  if (storage_.empty()) {
     return {0, 0};
   }
   Size size = {0, 0};
@@ -250,7 +273,7 @@ bool Sheet::CycleDetector(Position position, const CellInterface &cell) {
   std::stack<Position> stack;
   visited[position] = GRAY;
   //stack.push(position);
-  for (auto const &elem : cell.GetReferencedCells()) {
+  for (auto const &elem: cell.GetReferencedCells()) {
     // Либо ссылка на самого себя, либо ошибка формирования ссылок
     if (visited.count(elem) > 0) {
       return true;
@@ -283,7 +306,7 @@ bool Sheet::CycleDetector(Position position, const CellInterface &cell) {
       // Обход связанных вершин
       auto from_cell = this->GetCell(from);
       if (from_cell != nullptr) {
-        for (auto const to : from_cell->GetReferencedCells()) {
+        for (auto const to: from_cell->GetReferencedCells()) {
           auto it = visited.find(to);
           if (it != visited.end()) {
             if (it->second != WHITE) {
