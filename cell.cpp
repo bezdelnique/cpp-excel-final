@@ -8,7 +8,7 @@
 
 Cell::Cell(SheetInterface &sheet) :
     sheet_(sheet),
-    value_holder_(std::make_unique<CellValueEmpty>()) {};
+    value_holder_(std::make_unique<CellValueEmpty>()) {}
 
 Cell::~Cell() {}
 

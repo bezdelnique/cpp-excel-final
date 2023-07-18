@@ -252,17 +252,17 @@ void Sheet::afterSet(Position pos) {
 void Sheet::validatePosition(Position pos) {
 // Убираю проверку чтобы сходилось с тестами диплома
 
-//  if (pos.row < 0 || pos.col < 0) {
-//    std::stringstream ss;
-//    ss << pos;
-//    throw InvalidPositionException(ss.str());
-//  }
-//
-//  if (pos.row > Position::MAX_ROWS_ZB || pos.col > Position::MAX_COLS_ZB) {
-//    std::stringstream ss;
-//    ss << pos;
-//    throw InvalidPositionException(ss.str());
-//  }
+  if (pos.row < 0 || pos.col < 0) {
+    std::stringstream ss;
+    ss << pos;
+    throw InvalidPositionException(ss.str());
+  }
+
+  if (pos.row > Position::MAX_ROWS_ZB || pos.col > Position::MAX_COLS_ZB) {
+    std::stringstream ss;
+    ss << pos;
+    throw InvalidPositionException(ss.str());
+  }
 }
 
 bool Sheet::CycleDetector(Position position, const CellInterface &cell) {
