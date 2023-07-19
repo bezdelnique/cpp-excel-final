@@ -276,19 +276,16 @@ bool Sheet::CycleDetector(Position position, const CellInterface &cell) {
   std::stack<Position> stack;
   visited[position] = GRAY;
   //stack.push(position);
-  for (auto const &to: cell.GetReferencedCells()) {
+  auto tmp = cell.GetReferencedCells();
+  std::unordered_set<Position, PositionHasher> uniq(tmp.begin(), tmp.end());
+  for (auto const &to: uniq) {
     // Либо ссылка на самого себя, либо ошибка формирования ссылок
     if (position == to) {
       return true;
     }
 
-    // Вершина может встречаться несколько раз
-    // =C3 + B2 / C3
-    auto it = visited.find(to);
-    if (it == visited.end()) {
-      stack.push(to);
-      visited[to] = WHITE;
-    }
+    stack.push(to);
+    visited[to] = WHITE;
   }
 
   while (!stack.empty()) {
@@ -315,18 +312,24 @@ bool Sheet::CycleDetector(Position position, const CellInterface &cell) {
       // Обход связанных вершин
       auto from_cell = this->GetCell(from);
       if (from_cell != nullptr) {
-        for (auto const to: from_cell->GetReferencedCells()) {
-          // Вершина может встречаться несколько раз
-          // =C3 + B2 / C3
+        // Вершина в выражении может встречаться несколько раз
+        // =C3 + B2 / C3
+        auto tmp = from_cell->GetReferencedCells();
+        std::unordered_set<Position, PositionHasher> uniq(tmp.begin(), tmp.end());
+        for (auto const to: uniq) {
           auto it = visited.find(to);
-          if (it == visited.end()) {
-//            if (it->second != WHITE) {
-//              return true;
-//            }
-            // В первый раз в вершину приходим в начале обхода
-            visited[to] = Color::WHITE;
-            stack.push(to);
+          if (it != visited.end()) {
+            // BLACK - уже обошли без циклов
+            // WHITE - еще не обходили
+            if (it->second == GRAY) {
+              return true;
+            }
           }
+
+          // В первый раз в вершину приходим в начале обхода
+          visited[to] = Color::WHITE;
+          stack.push(to);
+
         }
       }
     }

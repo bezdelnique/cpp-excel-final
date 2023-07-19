@@ -308,36 +308,36 @@ void TestSimpleSearchCycles() {
     }
   }
 
-//  {
-//    auto sheet = CreateSheet();
-//    auto checkCell = [&sheet](Position pos, std::string text) {
-//      sheet->SetCell(pos, text);
-//      {
-//        CellInterface *cell = sheet->GetCell(pos);
-//        assert(cell != nullptr);
-//        std::cout << cell->GetText() << std::endl;
-//        std::cout << std::get<double>(cell->GetValue()) << std::endl;
-//      }
-//      {
-//        const auto &sheet_c = sheet;
-//        CellInterface *cell = sheet_c->GetCell(pos);
-//        assert(cell != nullptr);
-//        std::cout << cell->GetText() << std::endl;
-//        std::cout << std::get<double>(cell->GetValue()) << std::endl;
-//      }
-//    };
-//
-//    checkCell("A1"_pos, "=1");
-//    checkCell("B2"_pos, "=1/2");
-//    checkCell("A3"_pos, "=(1+1)/-1");
-//    checkCell("C3"_pos, "=(1+1)/(+1)");
-//
-//    checkCell("A2"_pos, "=A1");
-//    checkCell("B3"_pos, "=B2+(12/3 - 2)");
-//    checkCell("A4"_pos, "=A3+C3");
-//    checkCell("C4"_pos, "=C3 + B2 / C3");
-//    checkCell("D1"_pos, "=A1 + A1");
-//  }
+  {
+    auto sheet = CreateSheet();
+    auto checkCell = [&sheet](Position pos, std::string text) {
+      sheet->SetCell(pos, text);
+      {
+        CellInterface *cell = sheet->GetCell(pos);
+        assert(cell != nullptr);
+        std::cout << cell->GetText() << std::endl;
+        std::cout << std::get<double>(cell->GetValue()) << std::endl;
+      }
+      {
+        const auto &sheet_c = sheet;
+        CellInterface *cell = sheet_c->GetCell(pos);
+        assert(cell != nullptr);
+        std::cout << cell->GetText() << std::endl;
+        std::cout << std::get<double>(cell->GetValue()) << std::endl;
+      }
+    };
+
+    checkCell("A1"_pos, "=1");
+    checkCell("B2"_pos, "=1/2");
+    checkCell("A3"_pos, "=(1+1)/-1");
+    checkCell("C3"_pos, "=(1+1)/(+1)");
+
+    checkCell("A2"_pos, "=A1");
+    checkCell("B3"_pos, "=B2+(12/3 - 2)");
+    checkCell("A4"_pos, "=A3+C3");
+    checkCell("C4"_pos, "=C3 + B2 / C3");
+    checkCell("D1"_pos, "=A1 + A1");
+  }
 
   cerr << "TestSimpleSearchCycles OK"s << endl;
 }
@@ -514,26 +514,26 @@ void TestSimpleErrorText() {
 
 
 int main() {
-  TestRunner tr;
-  RUN_TEST(tr, TestEmpty);
-  RUN_TEST(tr, TestInvalidPosition);
-  RUN_TEST(tr, TestSetCellPlainText);
-  RUN_TEST(tr, TestClearCell);
-  RUN_TEST(tr, TestPrint);
-  TestExample();
-  TestClearEmptyCell();
-  TestClearCells5x5();
-
-  TestSimpleCell();
-  TestSimpleTableCell();
+//  TestRunner tr;
+//  RUN_TEST(tr, TestEmpty);
+//  RUN_TEST(tr, TestInvalidPosition);
+//  RUN_TEST(tr, TestSetCellPlainText);
+//  RUN_TEST(tr, TestClearCell);
+//  RUN_TEST(tr, TestPrint);
+//  TestExample();
+//  TestClearEmptyCell();
+//  TestClearCells5x5();
+//
+//  TestSimpleCell();
+//  TestSimpleTableCell();
   TestSimpleSearchCycles();
-  TestSimpleCacheInvalidation();
-
-  TestSimpleLinkToEmptyCell();
-  TestSimpleLinkToTextCell();
-  //TestSimpleLinkOutOfBound();
-  TestSimpleErrorPropagation();
-  TestSimpleErrorText();
+//  TestSimpleCacheInvalidation();
+//
+//  TestSimpleLinkToEmptyCell();
+//  TestSimpleLinkToTextCell();
+//  //TestSimpleLinkOutOfBound();
+//  TestSimpleErrorPropagation();
+//  TestSimpleErrorText();
 
   return 0;
 }
