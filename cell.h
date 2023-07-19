@@ -88,15 +88,13 @@ class Cell : public CellInterface {
         : CellValueText(raw_value),
           sheet_(sheet),
           referenced_cells_(ValidateExpressionAndInitForwardList(raw_value)) {
-      //formula_ = std::string_view(raw_value_.substr(1));
-
     }
 
     std::vector<Position> ValidateExpressionAndInitForwardList(std::string expr) {
       // Попытка разобрать формулу
       try {
         std::unique_ptr<FormulaInterface> formula = ParseFormula(expr.substr(1));
-        // Sorted
+        // Already sorted
         return formula->GetReferencedCells();
       } catch (...) {
         throw FormulaException("Unable to parse formula");
@@ -113,7 +111,6 @@ class Cell : public CellInterface {
       } else {
         ++CellCacheStat::missed;
 
-        //auto result = ParseFormula(std::string(formula_))->Evaluate(sheet_);
         auto result = ParseFormula(raw_value_.substr(1))->Evaluate(sheet_);
         // Ошибки не кэшируем
         if (std::holds_alternative<FormulaError>(result)) {
@@ -129,7 +126,6 @@ class Cell : public CellInterface {
     std::string GetText() override {
       // Очищенная формула
       std::stringstream ss;
-      //ss << '=' << ParseFormula(std::string(formula_))->GetExpression();
       ss << '=' << ParseFormula(raw_value_.substr(1))->GetExpression();
       return ss.str();
     }
@@ -158,7 +154,6 @@ class Cell : public CellInterface {
 
    private:
     SheetInterface &sheet_;
-    //std::string_view formula_;
     std::vector<Position> referenced_cells_;
     std::optional<double> cached_;
   };
@@ -173,31 +168,15 @@ class Cell : public CellInterface {
   Value GetValue() const override;
   std::string GetText() const override;
   std::vector<Position> GetReferencedCells() const override;
-  //std::vector<Position> GetForwardList() const ;
-  //std::vector<Position> GetBackwardList() const;
 
   void InvalidateCache() const;
-  //void AddBackwardLink(Position pos);
-  //void RemoveBackwardLink(Position pos);
 
   bool IsFormula() const;
   bool IsValid() const;
 
  private:
-  //Position position_;
-  //CellType cell_type_{CellType::STRING};
-  //std::string value_;
   SheetInterface &sheet_;
-  //std::optional<double> cached_;
-  // Ячейки на которые ссылаемся
-  //std::vector<Position> referenced_cells_;
-  // Ячейки которые ссылаются на нас
-  // Нужно обеспечить быстрый поиск для последующего удаления
-  //std::set<Position> backward_list_;
-  //std::string raw_value_;
   std::unique_ptr<CellValue> value_holder_;
-
-  //bool CycleDetector(std::forward_list<Position> forward_list);
 };
 
 class PositionHasher {

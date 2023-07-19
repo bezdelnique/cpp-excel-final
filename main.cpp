@@ -313,17 +313,23 @@ void TestSimpleSearchCycles() {
     auto checkCell = [&sheet](Position pos, std::string text) {
       sheet->SetCell(pos, text);
       {
+        std::stringstream ss;
         CellInterface *cell = sheet->GetCell(pos);
         assert(cell != nullptr);
-        std::cout << cell->GetText() << std::endl;
-        std::cout << std::get<double>(cell->GetValue()) << std::endl;
+//        std::cout << cell->GetText() << std::endl;
+//        std::cout << std::get<double>(cell->GetValue()) << std::endl;
+        ss << cell->GetText() << std::endl;
+        ss << std::get<double>(cell->GetValue()) << std::endl;
       }
       {
+        std::stringstream ss;
         const auto &sheet_c = sheet;
         CellInterface *cell = sheet_c->GetCell(pos);
         assert(cell != nullptr);
-        std::cout << cell->GetText() << std::endl;
-        std::cout << std::get<double>(cell->GetValue()) << std::endl;
+//        std::cout << cell->GetText() << std::endl;
+//        std::cout << std::get<double>(cell->GetValue()) << std::endl;
+        ss << cell->GetText() << std::endl;
+        ss << std::get<double>(cell->GetValue()) << std::endl;
       }
     };
 
@@ -514,26 +520,26 @@ void TestSimpleErrorText() {
 
 
 int main() {
-//  TestRunner tr;
-//  RUN_TEST(tr, TestEmpty);
-//  RUN_TEST(tr, TestInvalidPosition);
-//  RUN_TEST(tr, TestSetCellPlainText);
-//  RUN_TEST(tr, TestClearCell);
-//  RUN_TEST(tr, TestPrint);
-//  TestExample();
-//  TestClearEmptyCell();
-//  TestClearCells5x5();
-//
-//  TestSimpleCell();
-//  TestSimpleTableCell();
+  TestRunner tr;
+  RUN_TEST(tr, TestEmpty);
+  RUN_TEST(tr, TestInvalidPosition);
+  RUN_TEST(tr, TestSetCellPlainText);
+  RUN_TEST(tr, TestClearCell);
+  RUN_TEST(tr, TestPrint);
+  TestExample();
+  TestClearEmptyCell();
+  TestClearCells5x5();
+
+  TestSimpleCell();
+  TestSimpleTableCell();
   TestSimpleSearchCycles();
-//  TestSimpleCacheInvalidation();
-//
-//  TestSimpleLinkToEmptyCell();
-//  TestSimpleLinkToTextCell();
-//  //TestSimpleLinkOutOfBound();
-//  TestSimpleErrorPropagation();
-//  TestSimpleErrorText();
+  TestSimpleCacheInvalidation();
+
+  TestSimpleLinkToEmptyCell();
+  TestSimpleLinkToTextCell();
+  //TestSimpleLinkOutOfBound();
+  TestSimpleErrorPropagation();
+  TestSimpleErrorText();
 
   return 0;
 }

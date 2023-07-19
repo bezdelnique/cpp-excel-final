@@ -72,11 +72,6 @@ class Expr {
   virtual ~Expr() = default;
   virtual void Print(std::ostream &out) const = 0;
   virtual void DoPrintFormula(std::ostream &out, ExprPrecedence precedence) const = 0;
-//  virtual void DoGetCells(std::vector<std::string> &out) const {
-//    // default impl
-//  }
-
-  //virtual double Evaluate() const = 0;
   virtual double Evaluate(CellValueResolver &resolver) const = 0;
 
   // higher is tighter
@@ -97,10 +92,6 @@ class Expr {
       out << ')';
     }
   }
-
-//  void GetCells(std::vector<std::string> &out) const {
-//    DoGetCells(out);
-//  }
 };
 
 namespace {
@@ -131,11 +122,6 @@ class BinaryOpExpr final : public Expr {
     out << static_cast<char>(type_);
     rhs_->PrintFormula(out, precedence, /* right_child = */ true);
   }
-
-//  void DoGetCells(std::vector<std::string> &out) const {
-//    lhs_->DoGetCells(out);
-//    rhs_->DoGetCells(out);
-//  }
 
   ExprPrecedence GetPrecedence() const override {
     switch (type_) {
@@ -198,10 +184,6 @@ class UnaryOpExpr final : public Expr {
     operand_->PrintFormula(out, precedence);
   }
 
-//  void DoGetCells(std::vector<std::string> &out) const {
-//    operand_->DoGetCells(out);
-//  }
-
   ExprPrecedence GetPrecedence() const override {
     return EP_UNARY;
   }
@@ -234,10 +216,6 @@ class NumberExpr final : public Expr {
     out << value_;
   }
 
-//  void DoGetCells(std::vector<std::string> &out) const {
-//    // Skip
-//  }
-
   ExprPrecedence GetPrecedence() const override {
     return EP_ATOM;
   }
@@ -268,10 +246,6 @@ class CellExpr final : public Expr {
   void DoPrintFormula(std::ostream& out, ExprPrecedence /* precedence */) const override {
     Print(out);
   }
-
-//  void DoGetCells(std::vector<std::string> &out) const {
-//    out.push_back(address_);
-//  }
 
   ExprPrecedence GetPrecedence() const override {
     return EP_ATOM;
@@ -429,10 +403,6 @@ void FormulaAST::PrintFormula(std::ostream &out) const {
   root_expr_->PrintFormula(out, ASTImpl::EP_ATOM);
 }
 
-//void FormulaAST::GetCells(std::vector<std::string> &out) const {
-//  root_expr_->GetCells(out);
-//}
-
 double FormulaAST::Execute(const SheetInterface &sheet) const {
   CellValueResolver resolver = [&sheet](const Position* pos) -> double {
 //    auto pos = Position::FromString(address);
@@ -453,7 +423,6 @@ double FormulaAST::Execute(const SheetInterface &sheet) const {
       std::istringstream in(strValue);
       in >> result;
       if (!in) {
-        //throw ParsingError("Invalid number: " + strValue);
         throw FormulaError(FormulaError::Category::Value);
       }
       return result;

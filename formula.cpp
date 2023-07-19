@@ -3,8 +3,6 @@
 #include "FormulaAST.h"
 
 #include <algorithm>
-#include <cassert>
-#include <cctype>
 #include <sstream>
 #include <memory>
 
@@ -41,13 +39,10 @@ class Formula : public FormulaInterface {
 
   std::vector<Position> GetReferencedCells() const override {
     std::vector<Position> result;
-    //std::vector<std::string> vec;
-    //ast_.GetCells(vec);
-    // Sorted
+    // Already sorted
     for (auto const &pos : ast_.GetCells()) {
       result.push_back(pos);
     }
-    //std::sort(result.begin(), result.end());
     return result;
   };
 

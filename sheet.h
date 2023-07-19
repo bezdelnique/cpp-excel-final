@@ -13,10 +13,6 @@ class Sheet : public SheetInterface {
   class BackwardListManager {
    public:
     void AddBackwardLink(Position to, Position from) {
-//      auto it = backward_list_[from].find(to);
-//      if (it != backward_list_[from].end()) {
-//        throw std::logic_error("Backlink already exists"s);
-//      }
       // Возможно добавление повторяющихся значений: =C3 + B2 / C3
       backward_list_[from].emplace(to);
     }
@@ -57,7 +53,6 @@ class Sheet : public SheetInterface {
   void PrintTexts(std::ostream &output) const override;
 
  private:
-  //std::vector<Row> table_;
   std::unordered_map<Position, std::unique_ptr<Cell>, PositionHasher> storage_;
   std::map<int, size_t> cols;
   std::map<int, size_t> rows;

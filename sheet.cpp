@@ -24,25 +24,10 @@ void Sheet::SetCell(Position pos, std::string text) {
   }
 
   {
-//    if (pos.row + 1 > static_cast<int>(table_.size())) {
-//      table_.resize(pos.row + 1);
-//    }
-//
-//    if (pos.col + 1 > static_cast<int>(table_[pos.row].size())) {
-//      table_[pos.row].resize(pos.col + 1);
-//    }
-
-//    if (table_[pos.row][pos.col] == nullptr) {
-//      table_[pos.row][pos.col] = std::make_unique<Cell>(*this);
-//    }
-//
-//    table_[pos.row][pos.col]->Set(text);
-
     if (new_cell->IsValid()) {
       InvalidateCache(pos);
       UpdateBackwardLink(pos, new_cell);
     }
-    // table_[pos.row][pos.col] = std::move(new_cell);
 
     auto it = storage_.find(pos);
     if (it == storage_.end()) {
@@ -71,29 +56,22 @@ void Sheet::InvalidateCache(Position pos) {
 
 void Sheet::UpdateBackwardLink(Position pos, const std::unique_ptr<Cell> &new_cell) {
   auto cell = GetCell(pos);
-  //if (table_[pos.row][pos.col] != nullptr) {
   if (cell != nullptr) {
     // Инвалидировать кеш у зависимых ячеек
-    //table_[pos.row][pos.col]->InvalidateCache();
 
     // Удалить обратные ссылки
     for (auto const &from: cell->GetReferencedCells()) {
-      //auto cell = reinterpret_cast<Cell *>(GetCell(from));
-      //cell->RemoveBackwardLink(pos);
       backward_list_manager_.RemoveBackwardLink(pos, from);
     }
 
     // Сохранение обратных ссылок со предыдущей версии ячейки
     for (auto const from: backward_list_manager_.GetBackwardList(pos)) {
-      //new_cell->AddBackwardLink(from);
       backward_list_manager_.AddBackwardLink(pos, from);
     }
   }
 
   // Добавить новые обратные ссылки
   for (auto const &from: new_cell->GetReferencedCells()) {
-    //auto cell = reinterpret_cast<Cell*>(GetCell(from));
-    //cell->AddBackwardLink(pos);
     backward_list_manager_.AddBackwardLink(pos, from);
   }
 
@@ -107,13 +85,6 @@ const CellInterface *Sheet::GetCell(Position pos) const {
     return it->second.get();
   }
 
-//  if (pos.row < static_cast<int>(table_.size())) {
-//    if (pos.col < static_cast<int>(table_[pos.row].size())) {
-//      if (table_[pos.row][pos.col] != nullptr) {
-//        return table_[pos.row][pos.col].get();
-//      }
-//    }
-//  }
   return nullptr;
 }
 
@@ -125,13 +96,6 @@ CellInterface *Sheet::GetCell(Position pos) {
     return it->second.get();
   }
 
-//  if (pos.row < static_cast<int>(table_.size())) {
-//    if (pos.col < static_cast<int>(table_[pos.row].size())) {
-//      if (table_[pos.row][pos.col] != nullptr) {
-//        return table_[pos.row][pos.col].get();
-//      }
-//    }
-//  }
   return nullptr;
 }
 
@@ -139,10 +103,8 @@ void Sheet::ClearCell(Position pos) {
   validatePosition(pos);
 
   bool found = false;
-  //CellInterface *cell = GetCell(pos);
   auto it = storage_.find(pos);
   if (it != storage_.end()) {
-    //table_[pos.row][pos.col] = nullptr;
     it->second = nullptr;
     found = true;
   }
@@ -153,7 +115,6 @@ void Sheet::ClearCell(Position pos) {
 }
 
 Size Sheet::GetPrintableSize() const {
-  //if (table_.empty()) {
   if (storage_.empty()) {
     return {0, 0};
   }
@@ -250,8 +211,6 @@ void Sheet::afterSet(Position pos) {
 }
 
 void Sheet::validatePosition(Position pos) {
-// Убираю проверку чтобы сходилось с тестами диплома
-
   if (pos.row < 0 || pos.col < 0) {
     std::stringstream ss;
     ss << pos;
@@ -314,8 +273,8 @@ bool Sheet::CycleDetector(Position position, const CellInterface &cell) {
       if (from_cell != nullptr) {
         // Вершина в выражении может встречаться несколько раз
         // =C3 + B2 / C3
-        auto tmp = from_cell->GetReferencedCells();
-        std::unordered_set<Position, PositionHasher> uniq(tmp.begin(), tmp.end());
+        tmp = from_cell->GetReferencedCells();
+        uniq = std::unordered_set<Position, PositionHasher>(tmp.begin(), tmp.end());
         for (auto const to: uniq) {
           auto it = visited.find(to);
           if (it != visited.end()) {
@@ -342,5 +301,3 @@ bool Sheet::CycleDetector(Position position, const CellInterface &cell) {
 std::unique_ptr<SheetInterface> CreateSheet() {
   return std::make_unique<Sheet>();
 }
-
-

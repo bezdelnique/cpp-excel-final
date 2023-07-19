@@ -26,7 +26,6 @@ class FormulaAST {
   double Execute(const SheetInterface &sheet) const;
   void Print(std::ostream &out) const;
   void PrintFormula(std::ostream &out) const;
-  //void GetCells(std::vector<std::string> &out) const;
 
   std::forward_list<Position>& GetCells() {
     return cells_;

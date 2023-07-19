@@ -2,14 +2,13 @@
 
 #include <cctype>
 #include <sstream>
-#include <cmath>
 
 const int LETTERS = 26;
 const int MAX_POSITION_LENGTH = 17;
 const int MAX_POS_DIGIT_COUNT = 8;
 const int MAX_POS_LETTER_COUNT = 3;
-const int MAX_ROWS_ZB = Position::MAX_ROWS - 1;
-const int MAX_COLS_ZB = Position::MAX_COLS - 1;
+//const int MAX_ROWS_ZB = Position::MAX_ROWS - 1;
+//const int MAX_COLS_ZB = Position::MAX_COLS - 1;
 
 const Position Position::NONE = {-1, -1};
 
@@ -42,7 +41,6 @@ std::string Position::ToString() const {
 
   std::stringstream ss;
   // Чтобы математика складывалась
-  //int col = col + 1;
   if (col > (zz - 1)) {
     int first = col / (LETTERS * LETTERS);
     int remains = col - ((LETTERS * LETTERS) * first);
